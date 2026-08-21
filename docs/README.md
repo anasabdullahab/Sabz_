@@ -15,11 +15,13 @@ in the order the features were built.
 | [prompt-4-crop-suitability.md](prompt-4-crop-suitability.md) | Crop suitability evaluation and recommendation foundation |
 | [prompt-5-crop-recommendation.md](prompt-5-crop-recommendation.md) | Dynamic next-crop recommendation & crop history foundation |
 | [prompt-6-disease-detection.md](prompt-6-disease-detection.md) | AI crop disease identification & agricultural advice foundation |
+| [prompt-7-crop-monitoring.md](prompt-7-crop-monitoring.md) | Smart crop monitoring schedule & farmer reminder foundation |
 | [pakistan-admin-data.md](pakistan-admin-data.md) | Pakistan administrative divisions dataset reference |
 
 ## API base
 
 - Development server: `http://localhost:5073`
 - Swagger UI: `http://localhost:5073/swagger`
-- All farm/weather/crop-suitability/crop-recommendation/disease-detection
-  endpoints require a JWT bearer token obtained from `POST /api/auth/login`.
+- All farm/weather/crop-suitability/crop-recommendation/disease-detection/
+  monitoring endpoints require a JWT bearer token obtained from
+  `POST /api/auth/login`.

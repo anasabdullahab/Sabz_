@@ -18,6 +18,8 @@ public class SabzDbContext : DbContext
     public DbSet<RegionalCropSuitability> RegionalCropSuitabilities => Set<RegionalCropSuitability>();
     public DbSet<CropChangeRule> CropChangeRules => Set<CropChangeRule>();
     public DbSet<DiseaseInformation> DiseaseInformations => Set<DiseaseInformation>();
+    public DbSet<CropMonitoringRule> CropMonitoringRules => Set<CropMonitoringRule>();
+    public DbSet<CropMonitoringCheck> CropMonitoringChecks => Set<CropMonitoringCheck>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -171,6 +173,50 @@ public class SabzDbContext : DbContext
             entity.HasOne(d => d.CropCatalog)
                 .WithMany()
                 .HasForeignKey(d => d.CropCatalogId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // --- CropMonitoringRule (Prompt 7: data-driven monitoring checkpoints) ---
+        modelBuilder.Entity<CropMonitoringRule>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Title).IsRequired().HasMaxLength(200);
+            entity.Property(r => r.Description).IsRequired().HasMaxLength(1000);
+            entity.Property(r => r.InspectionItems).IsRequired().HasMaxLength(1500);
+            entity.Property(r => r.Priority).IsRequired().HasMaxLength(20);
+            entity.Property(r => r.TriggerType).IsRequired().HasMaxLength(30);
+            entity.Property(r => r.Source).IsRequired().HasMaxLength(500);
+            entity.HasIndex(r => r.CropCatalogId);
+            entity.HasOne(r => r.CropCatalog)
+                .WithMany()
+                .HasForeignKey(r => r.CropCatalogId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // --- CropMonitoringCheck (Prompt 7: scheduled checks per crop) ---
+        modelBuilder.Entity<CropMonitoringCheck>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(c => c.Observation).HasConversion<string>().HasMaxLength(30);
+            entity.Property(c => c.Title).IsRequired().HasMaxLength(200);
+            entity.Property(c => c.Description).IsRequired().HasMaxLength(1000);
+            entity.Property(c => c.InspectionItems).IsRequired().HasMaxLength(1500);
+            entity.Property(c => c.Priority).IsRequired().HasMaxLength(20);
+            entity.Property(c => c.FarmerNotes).HasMaxLength(1000);
+
+            // Idempotent generation: at most one check per (crop, rule).
+            entity.HasIndex(c => new { c.CropId, c.RuleId }).IsUnique();
+            entity.HasIndex(c => c.FarmId);
+            entity.HasIndex(c => c.ScheduledDate);
+
+            entity.HasOne(c => c.Crop)
+                .WithMany()
+                .HasForeignKey(c => c.CropId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(c => c.Rule)
+                .WithMany()
+                .HasForeignKey(c => c.RuleId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
 

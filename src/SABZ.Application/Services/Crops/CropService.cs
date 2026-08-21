@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using SABZ.Application.DTOs.Crops;
 using SABZ.Application.Interfaces;
 using SABZ.Domain.Entities;
@@ -9,6 +10,10 @@ public class CropService : ICropService
 {
     private readonly ICropRepository _cropRepository;
     private readonly IFarmRepository _farmRepository;
+    private readonly ICropMonitoringRuleRepository _monitoringRuleRepository;
+    private readonly ICropMonitoringCheckRepository _monitoringCheckRepository;
+    private readonly ISystemClock _clock;
+    private readonly ILogger<CropService> _logger;
 
     private static readonly HashSet<string> ValidSeasons = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -25,10 +30,20 @@ public class CropService : ICropService
         "Sowing", "Germination", "Vegetative", "Flowering", "Fruiting", "Maturity", "Harvesting"
     };
 
-    public CropService(ICropRepository cropRepository, IFarmRepository farmRepository)
+    public CropService(
+        ICropRepository cropRepository,
+        IFarmRepository farmRepository,
+        ICropMonitoringRuleRepository monitoringRuleRepository,
+        ICropMonitoringCheckRepository monitoringCheckRepository,
+        ISystemClock clock,
+        ILogger<CropService> logger)
     {
         _cropRepository = cropRepository;
         _farmRepository = farmRepository;
+        _monitoringRuleRepository = monitoringRuleRepository;
+        _monitoringCheckRepository = monitoringCheckRepository;
+        _clock = clock;
+        _logger = logger;
     }
 
     public async Task<CropResponseDto> CreateCropAsync(Guid userId, Guid farmId, CreateCropDto dto)
@@ -64,7 +79,57 @@ public class CropService : ICropService
         await _cropRepository.AddAsync(crop);
         await _cropRepository.SaveChangesAsync();
 
+        // Prompt 7: schedule monitoring checks for crops with a planting date.
+        // Degrades gracefully - crop creation must never fail because of monitoring.
+        await TryGenerateMonitoringChecksAsync(crop);
+
         return MapToResponse(crop);
+    }
+
+    /// <summary>
+    /// Idempotent monitoring-check generation (one check per rule, keyed by the
+    /// unique CropId+RuleId database index). Runs in the same save scope; when
+    /// the crop has no planting date or no applicable rules it simply does nothing.
+    /// </summary>
+    private async Task TryGenerateMonitoringChecksAsync(Crop crop)
+    {
+        try
+        {
+            if (!crop.PlantingDate.HasValue)
+                return;
+
+            var rules = await _monitoringRuleRepository.GetActiveScheduledForCropAsync(crop.CropCatalogId);
+            if (rules.Count == 0)
+                return;
+
+            var existingRuleIds = await _monitoringCheckRepository.GetExistingRuleIdsAsync(crop.Id);
+            var plantingDate = crop.PlantingDate.Value.Date;
+
+            foreach (var rule in rules.Where(r => !existingRuleIds.Contains(r.Id)))
+            {
+                await _monitoringCheckRepository.AddAsync(new CropMonitoringCheck
+                {
+                    Id = Guid.NewGuid(),
+                    CropId = crop.Id,
+                    RuleId = rule.Id,
+                    FarmId = crop.FarmId,
+                    ScheduledDate = plantingDate.AddDays(rule.DayOffsetAfterPlanting),
+                    Status = MonitoringCheckStatus.Scheduled,
+                    Title = rule.Title,
+                    Description = rule.Description,
+                    InspectionItems = rule.InspectionItems,
+                    Priority = rule.Priority,
+                    CreatedAt = _clock.UtcNow
+                });
+            }
+
+            await _monitoringCheckRepository.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // Monitoring is additive enrichment - never break existing crop creation.
+            _logger.LogWarning(ex, "Monitoring check generation skipped for crop {CropId}.", crop.Id);
+        }
     }
 
     public async Task<List<CropResponseDto>> GetCropsByFarmAsync(Guid userId, Guid farmId)

@@ -10,6 +10,7 @@ using SABZ.Application.Services.CropRecommendation;
 using SABZ.Application.Services.CropSuitability;
 using SABZ.Application.Services.DiseaseDetection;
 using SABZ.Application.Services.Farms;
+using SABZ.Application.Services.Monitoring;
 using SABZ.Application.Services.Weather;
 using SABZ.Infrastructure.Persistence;
 using SABZ.Infrastructure.Repositories;
@@ -42,6 +43,12 @@ public static class DependencyInjection
         // Crops
         services.AddScoped<ICropRepository, CropRepository>();
         services.AddScoped<ICropService, CropService>();
+
+        // Crop monitoring (Prompt 7) - rules, scheduled checks, centralised UTC clock
+        services.AddSingleton<ISystemClock, SystemClock>();
+        services.AddScoped<ICropMonitoringRuleRepository, CropMonitoringRuleRepository>();
+        services.AddScoped<ICropMonitoringCheckRepository, CropMonitoringCheckRepository>();
+        services.AddScoped<IMonitoringService, MonitoringService>();
 
         // Weather configuration and caching
         services.Configure<WeatherSettings>(configuration.GetSection(WeatherSettings.SectionName));

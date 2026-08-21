@@ -30,6 +30,7 @@ Dependency direction is strictly inward: API -> Infrastructure -> Application ->
   - `AuthenticationException` -> 401
   - `ForbiddenException` -> 403
   - `NotFoundException` -> 404
+  - `ConflictException` -> 409
   - `WeatherProviderException` -> 502
   - `DiseaseProviderException` -> 502
 - **Configuration via `IOptions<T>`** bound from `appsettings.json` sections
@@ -48,4 +49,5 @@ Dependency direction is strictly inward: API -> Infrastructure -> Application ->
 | Crop suitability | Data-driven scoring engine over `CropRequirement` + `RegionalCropSuitability` reference data |
 | Crop recommendation | Reuses suitability engine + crop history + `CropChangeRule` reference data (Prompt 5) |
 | Disease detection | AI vision pipeline (image validation → plant relevance → disease → advice) via `IPlantDiseaseDetectionProvider` + curated `DiseaseInformation` data (Prompt 6) |
+| Crop monitoring | Data-driven schedule from `CropMonitoringRule` reference data; checks generated per crop, computed Due/Upcoming against `ISystemClock` UTC; farmer observations recommend (never invoke) the Prompt 6 photo workflow (Prompt 7) |
 | Error handling | Exception middleware + problem-style JSON errors |

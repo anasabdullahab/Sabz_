@@ -25,6 +25,7 @@ public static class SeedData
         SeedRegionalSuitability(modelBuilder);
         SeedCropChangeRules(modelBuilder);
         SeedDiseaseInformation(modelBuilder);
+        SeedCropMonitoringRules(modelBuilder);
     }
 
     // Province, District, and Tehsil seeding has been moved to LocationDataSeeder (runtime JSON-based).
@@ -261,6 +262,44 @@ public static class SeedData
                 Source = source,
                 IsActive = true
             }
+        );
+    }
+
+    private static void SeedCropMonitoringRules(ModelBuilder mb)
+    {
+        // Source: Initial SABZ monitoring reference dataset (general agronomic knowledge).
+        // A small, honestly labelled foundation dataset of scheduled monitoring checkpoints
+        // for major crops - NOT scientifically exhaustive. Extend with expert-reviewed
+        // guidance later. InspectionItems use semicolon-separated values.
+        // TriggerType is "Scheduled" (days after planting); future trigger kinds such as
+        // WeatherEvent, SatelliteAlert or Manual can be added as new reference rows.
+        const string source = "Initial SABZ monitoring reference dataset (general agronomic knowledge, expert review recommended)";
+
+        mb.Entity<CropMonitoringRule>().HasData(
+            // ---------------- Wheat (CropCatalogId 1) ----------------
+            new { Id = 1, CropCatalogId = (int?)1, DayOffsetAfterPlanting = 14, Title = "Early growth and emergence check", Description = "Check that seedlings have emerged evenly and look for early signs of stress or damage in several places across the field.", InspectionItems = "Even seedling emergence; yellowing of young leaves; unusual spots; insect feeding on seedlings; weed seedlings", Priority = "Medium", TriggerType = "Scheduled", IsActive = true, Source = source },
+            new { Id = 2, CropCatalogId = (int?)1, DayOffsetAfterPlanting = 30, Title = "Leaf health and pest check", Description = "Examine leaves on several plants for spots, discoloration and insect damage, and check how weeds are competing with the crop.", InspectionItems = "Leaf spots; yellowing or rust-coloured pustules; holes or insect damage; weed competition; stunted plants", Priority = "High", TriggerType = "Scheduled", IsActive = true, Source = source },
+            new { Id = 3, CropCatalogId = (int?)1, DayOffsetAfterPlanting = 60, Title = "Mid-season disease and crop health check", Description = "Walk the field and inspect the middle and upper leaves for disease symptoms and overall crop condition.", InspectionItems = "Rust pustules or stripes; powdery patches; pest damage; wilting or weak stems; general crop vigour", Priority = "Medium", TriggerType = "Scheduled", IsActive = true, Source = source },
+
+            // ---------------- Rice (CropCatalogId 2) ----------------
+            new { Id = 4, CropCatalogId = (int?)2, DayOffsetAfterPlanting = 15, Title = "Establishment check", Description = "Check seedling establishment and look for early problems in the paddy.", InspectionItems = "Even stand; missing or dead seedlings; yellowing; snails or insects; weed growth", Priority = "Medium", TriggerType = "Scheduled", IsActive = true, Source = source },
+            new { Id = 5, CropCatalogId = (int?)2, DayOffsetAfterPlanting = 35, Title = "Leaf disease and pest check", Description = "Inspect leaves on several hills for lesions and insects, especially during warm humid weather.", InspectionItems = "Diamond-shaped or oval leaf lesions; yellowing; leaf folders or stem borers; brown planthopper insects at the base", Priority = "High", TriggerType = "Scheduled", IsActive = true, Source = source },
+            new { Id = 6, CropCatalogId = (int?)2, DayOffsetAfterPlanting = 70, Title = "Flowering-stage health check", Description = "Check the crop around flowering for diseases and grain development problems.", InspectionItems = "Neck or node lesions; discoloured grains; pest damage; uneven flowering; weed escapes", Priority = "Medium", TriggerType = "Scheduled", IsActive = true, Source = source },
+
+            // ---------------- Cotton (CropCatalogId 3) ----------------
+            new { Id = 7, CropCatalogId = (int?)3, DayOffsetAfterPlanting = 20, Title = "Seedling and leaf curl check", Description = "Inspect young plants for vigour and early leaf-curl symptoms spread by whiteflies.", InspectionItems = "Curling or crinkled leaves; thickened veins; whiteflies on leaf undersides; missing plants; insect damage", Priority = "High", TriggerType = "Scheduled", IsActive = true, Source = source },
+            new { Id = 8, CropCatalogId = (int?)3, DayOffsetAfterPlanting = 45, Title = "Pest pressure check", Description = "Check leaves, buds and squares for bollworms, aphids, whiteflies and mites.", InspectionItems = "Holes in buds or squares; sticky honeydew; curled or bronzed leaves; pest eggs or larvae on undersides", Priority = "High", TriggerType = "Scheduled", IsActive = true, Source = source },
+            new { Id = 9, CropCatalogId = (int?)3, DayOffsetAfterPlanting = 90, Title = "Mid-season boll health check", Description = "Inspect developing bolls and upper leaves for pests, disease symptoms and plant health.", InspectionItems = "Damaged or dropped bolls; leaf spots; wilting branches; pest activity; overall plant vigour", Priority = "Medium", TriggerType = "Scheduled", IsActive = true, Source = source },
+
+            // ---------------- Potato (CropCatalogId 6) ----------------
+            new { Id = 10, CropCatalogId = (int?)6, DayOffsetAfterPlanting = 14, Title = "Emergence check", Description = "Check that plants have emerged evenly and look for early leaf problems.", InspectionItems = "Even emergence; missing plants; dark or water-soaked leaf patches; insect feeding; weed seedlings", Priority = "Medium", TriggerType = "Scheduled", IsActive = true, Source = source },
+            new { Id = 11, CropCatalogId = (int?)6, DayOffsetAfterPlanting = 30, Title = "Blight and pest check", Description = "Inspect leaf tips and undersides during cool wet weather for early blight symptoms and pests.", InspectionItems = "Water-soaked dark patches; white mould under leaves; holes or larvae; yellowing; weed competition", Priority = "High", TriggerType = "Scheduled", IsActive = true, Source = source },
+            new { Id = 12, CropCatalogId = (int?)6, DayOffsetAfterPlanting = 55, Title = "Tuber-stage health check", Description = "Check foliage health as tubers develop; late blight can escalate within days, so inspect carefully.", InspectionItems = "Rapid browning or collapse; spreading lesions; pest damage; wilting; overall canopy condition", Priority = "High", TriggerType = "Scheduled", IsActive = true, Source = source },
+
+            // ---------------- Tomato (CropCatalogId 7) ----------------
+            new { Id = 13, CropCatalogId = (int?)7, DayOffsetAfterPlanting = 14, Title = "Transplant establishment check", Description = "Check transplants for establishment and early leaf problems.", InspectionItems = "Wilting or dead transplants; dark spots on lower leaves; curling; cutworm damage; weed seedlings", Priority = "Medium", TriggerType = "Scheduled", IsActive = true, Source = source },
+            new { Id = 14, CropCatalogId = (int?)7, DayOffsetAfterPlanting = 30, Title = "Leaf spot and pest check", Description = "Examine leaves, especially the lower ones, for target-like spots and pests.", InspectionItems = "Dark concentric spots; yellowing around spots; holes from caterpillars; aphids or whiteflies; curling leaves", Priority = "High", TriggerType = "Scheduled", IsActive = true, Source = source },
+            new { Id = 15, CropCatalogId = (int?)7, DayOffsetAfterPlanting = 60, Title = "Fruiting-stage health check", Description = "Inspect foliage and developing fruit during fruiting for disease and damage.", InspectionItems = "Spots moving up the plant; fruit blemishes; wilting; leaf mould under humid conditions; pest damage on fruit", Priority = "Medium", TriggerType = "Scheduled", IsActive = true, Source = source }
         );
     }
 }
