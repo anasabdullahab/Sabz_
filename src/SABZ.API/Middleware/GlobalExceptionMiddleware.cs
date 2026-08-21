@@ -71,6 +71,12 @@ public class GlobalExceptionMiddleware
                 errorResponse = new { message = weatherException.Message };
                 break;
 
+            case DiseaseProviderException diseaseException:
+                _logger.LogWarning(diseaseException, "Disease detection provider error.");
+                response.StatusCode = (int)HttpStatusCode.BadGateway;
+                errorResponse = new { message = diseaseException.Message };
+                break;
+
             default:
                 _logger.LogError(exception, "An unexpected error occurred.");
                 response.StatusCode = (int)HttpStatusCode.InternalServerError;

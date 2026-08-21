@@ -18,6 +18,7 @@ public class CropRepository : ICropRepository
     {
         return await _context.Crops
             .Include(c => c.Farm)
+            .Include(c => c.CropCatalog)
             .FirstOrDefaultAsync(c => c.Id == id);
     }
 

@@ -31,8 +31,9 @@ Dependency direction is strictly inward: API -> Infrastructure -> Application ->
   - `ForbiddenException` -> 403
   - `NotFoundException` -> 404
   - `WeatherProviderException` -> 502
+  - `DiseaseProviderException` -> 502
 - **Configuration via `IOptions<T>`** bound from `appsettings.json` sections
-  (`Jwt`, `Weather`, `CropSuitability`, `CropRecommendation`) and registered in
+  (`Jwt`, `Weather`, `CropSuitability`, `CropRecommendation`, `DiseaseDetection`) and registered in
   `SABZ.Infrastructure/DependencyInjection.cs`.
 - **Database:** SQL Server LocalDB (`(localdb)\mssqllocaldb`, database `SabzDB`),
   EF Core migrations, `HasData` seeding for reference datasets, runtime seeding
@@ -46,4 +47,5 @@ Dependency direction is strictly inward: API -> Infrastructure -> Application ->
 | Weather data | Open-Meteo via named HttpClient + `IMemoryCache` (15 min current / 60 min forecast) |
 | Crop suitability | Data-driven scoring engine over `CropRequirement` + `RegionalCropSuitability` reference data |
 | Crop recommendation | Reuses suitability engine + crop history + `CropChangeRule` reference data (Prompt 5) |
+| Disease detection | AI vision pipeline (image validation → plant relevance → disease → advice) via `IPlantDiseaseDetectionProvider` + curated `DiseaseInformation` data (Prompt 6) |
 | Error handling | Exception middleware + problem-style JSON errors |

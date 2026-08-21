@@ -17,6 +17,7 @@ public class SabzDbContext : DbContext
     public DbSet<CropRequirement> CropRequirements => Set<CropRequirement>();
     public DbSet<RegionalCropSuitability> RegionalCropSuitabilities => Set<RegionalCropSuitability>();
     public DbSet<CropChangeRule> CropChangeRules => Set<CropChangeRule>();
+    public DbSet<DiseaseInformation> DiseaseInformations => Set<DiseaseInformation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -153,6 +154,24 @@ public class SabzDbContext : DbContext
             entity.Property(r => r.Explanation).IsRequired().HasMaxLength(500);
             entity.Property(r => r.Source).HasMaxLength(500);
             entity.HasIndex(r => new { r.PreviousCategory, r.NextCategory }).IsUnique();
+        });
+
+        // --- DiseaseInformation (Prompt 6: curated agricultural guidance) ---
+        modelBuilder.Entity<DiseaseInformation>(entity =>
+        {
+            entity.HasKey(d => d.Id);
+            entity.Property(d => d.DiseaseName).IsRequired().HasMaxLength(150);
+            entity.Property(d => d.Description).IsRequired().HasMaxLength(1000);
+            entity.Property(d => d.Symptoms).IsRequired().HasMaxLength(1000);
+            entity.Property(d => d.RecommendedActions).IsRequired().HasMaxLength(1500);
+            entity.Property(d => d.Prevention).IsRequired().HasMaxLength(1500);
+            entity.Property(d => d.Monitoring).IsRequired().HasMaxLength(1500);
+            entity.Property(d => d.Source).IsRequired().HasMaxLength(500);
+            entity.HasIndex(d => d.CropCatalogId);
+            entity.HasOne(d => d.CropCatalog)
+                .WithMany()
+                .HasForeignKey(d => d.CropCatalogId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // --- Seed Data ---

@@ -24,6 +24,7 @@ public static class SeedData
         SeedCropRequirements(modelBuilder);
         SeedRegionalSuitability(modelBuilder);
         SeedCropChangeRules(modelBuilder);
+        SeedDiseaseInformation(modelBuilder);
     }
 
     // Province, District, and Tehsil seeding has been moved to LocationDataSeeder (runtime JSON-based).
@@ -169,6 +170,97 @@ public static class SeedData
             new { Id = 4, PreviousCategory = "Vegetable", NextCategory = "Vegetable", Effect = "Caution", Explanation = "Growing vegetables back-to-back can increase pest and disease carry-over; rotating with a different crop group is commonly advised.", IsActive = true, Source = source },
             new { Id = 5, PreviousCategory = "Pulse", NextCategory = "Pulse", Effect = "Caution", Explanation = "Consecutive pulse crops can build up pulse-specific diseases; alternating with another crop group is commonly advised.", IsActive = true, Source = source },
             new { Id = 6, PreviousCategory = "Oilseed", NextCategory = "Cereal", Effect = "Positive", Explanation = "Oilseeds are generally considered a good preceding crop for cereals due to different rooting and nutrient use.", IsActive = true, Source = source }
+        );
+    }
+
+    private static void SeedDiseaseInformation(ModelBuilder mb)
+    {
+        // Source: Initial SABZ disease reference dataset (general plant-health knowledge).
+        // Small, clearly labelled foundation dataset - NOT authoritative treatment guidance.
+        // No chemical dosages are stored by design; farmers are directed to approved product
+        // labels and local agricultural experts. Extend with expert-reviewed data later.
+        // List fields use semicolon-separated values.
+        const string source = "Initial SABZ disease reference dataset (general plant-health knowledge, expert review recommended)";
+
+        mb.Entity<DiseaseInformation>().HasData(
+            new
+            {
+                Id = 1,
+                DiseaseName = "Wheat Leaf Rust",
+                CropCatalogId = (int?)1,
+                Description = "A common fungal disease of wheat that appears as small round brown-orange pustules scattered on leaf surfaces and can reduce grain filling when severe.",
+                Symptoms = "Small round orange-brown pustules on leaves; yellowing around pustules; premature leaf drying in severe cases.",
+                RecommendedActions = "If only a few leaves are affected, remove and destroy them away from the field; if spreading, consult the local agricultural extension office promptly; avoid late-season excess nitrogen which can worsen rust",
+                Prevention = "Grow rust-resistant varieties where available; avoid very dense stands; monitor fields regularly during humid weather",
+                Monitoring = "Check lower and middle leaves twice weekly during tillering to grain fill; record whether pustules are increasing or spreading to new leaves",
+                Source = source,
+                IsActive = true
+            },
+            new
+            {
+                Id = 2,
+                DiseaseName = "Rice Blast",
+                CropCatalogId = (int?)2,
+                Description = "A major fungal disease of rice causing diamond-shaped lesions on leaves and can affect necks of panicles, especially under warm humid conditions.",
+                Symptoms = "Diamond/eye-shaped grey lesions with brown borders on leaves; lesions on nodes; neck rot in severe cases.",
+                RecommendedActions = "Avoid excess nitrogen application; maintain balanced water management; consult the local agricultural extension office if lesions are spreading",
+                Prevention = "Use certified seed and resistant varieties; avoid prolonged leaf wetness; keep balanced fertility",
+                Monitoring = "Inspect leaves weekly during warm humid periods; watch for new diamond-shaped lesions and neck symptoms near flowering",
+                Source = source,
+                IsActive = true
+            },
+            new
+            {
+                Id = 3,
+                DiseaseName = "Tomato Early Blight",
+                CropCatalogId = (int?)7,
+                Description = "A common fungal leaf disease of tomato showing dark concentric target-like spots, usually starting on older lower leaves.",
+                Symptoms = "Dark brown spots with concentric rings (target-like) on older leaves; yellow halo around spots; lower leaves drying first.",
+                RecommendedActions = "Remove affected lower leaves and dispose away from the field; improve air circulation; avoid wetting leaves when irrigating",
+                Prevention = "Mulch soil to reduce splash; rotate away from tomato/potato; water at the base of plants in the morning",
+                Monitoring = "Check lower leaves twice weekly, especially after rain; note whether spots are moving upward on the plant",
+                Source = source,
+                IsActive = true
+            },
+            new
+            {
+                Id = 4,
+                DiseaseName = "Tomato Leaf Curl Virus",
+                CropCatalogId = (int?)7,
+                Description = "A virus disease spread by whiteflies causing upward curling, crinkling and yellowing of tomato leaves and reduced fruit set.",
+                Symptoms = "Upward curling and crinkling of leaves; yellowing; stunted growth; poor fruit setting.",
+                RecommendedActions = "Remove clearly affected plants to reduce spread; control whitefly populations with guidance from a local expert; avoid moving plant material between fields",
+                Prevention = "Use healthy transplants; monitor and manage whiteflies early; consider reflective mulches where practical",
+                Monitoring = "Look weekly for new curling or yellowing plants and for whiteflies on leaf undersides",
+                Source = source,
+                IsActive = true
+            },
+            new
+            {
+                Id = 5,
+                DiseaseName = "Potato Late Blight",
+                CropCatalogId = (int?)6,
+                Description = "A serious disease of potato favoured by cool wet weather, causing water-soaked dark lesions on leaves that can spread rapidly through a field.",
+                Symptoms = "Water-soaked dark patches on leaf tips and edges; white mould under leaves in humid weather; rapid browning and collapse.",
+                RecommendedActions = "Act quickly - remove and destroy affected foliage if limited; seek expert advice immediately if spreading, as late blight can escalate within days",
+                Prevention = "Use certified seed; avoid overhead irrigation late in the day; ensure good spacing for airflow",
+                Monitoring = "Inspect fields every 2-3 days during cool wet spells; check leaf undersides for white mould",
+                Source = source,
+                IsActive = true
+            },
+            new
+            {
+                Id = 6,
+                DiseaseName = "Cotton Leaf Curl Virus",
+                CropCatalogId = (int?)3,
+                Description = "A virus disease of cotton spread by whiteflies, causing leaf curling, vein thickening and enations, and significant yield loss in susceptible varieties.",
+                Symptoms = "Upward/downward curling of leaves; thickened veins; leaf-like outgrowths (enations) on leaf undersides; stunted plants.",
+                RecommendedActions = "Remove clearly affected plants early; manage whiteflies following local expert guidance; avoid late sowing where the disease is known to be common",
+                Prevention = "Use tolerant varieties where available; manage whitefly populations early; keep fields free of alternate hosts",
+                Monitoring = "Check young plants weekly for curling and enations; monitor whitefly numbers on leaf undersides",
+                Source = source,
+                IsActive = true
+            }
         );
     }
 }

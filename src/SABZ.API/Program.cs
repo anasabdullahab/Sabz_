@@ -12,6 +12,19 @@ var builder = WebApplication.CreateBuilder(args);
 // Add controllers
 builder.Services.AddControllers();
 
+// Disease detection (Prompt 6): allow multipart image uploads up to ~11 MB
+// (image limit is 10 MB + multipart overhead). Oversized bodies are rejected
+// by Kestrel before reaching the controller; file-level checks also apply.
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 11_000_000;
+    options.ValueLengthLimit = int.MaxValue;
+});
+builder.Services.Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(options =>
+{
+    options.Limits.MaxRequestBodySize = 11_000_000;
+});
+
 // Add infrastructure (DbContext, repositories, services)
 builder.Services.AddInfrastructure(builder.Configuration);
 

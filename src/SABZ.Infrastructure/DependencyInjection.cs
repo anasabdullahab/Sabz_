@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,11 +8,13 @@ using SABZ.Application.Services.Auth;
 using SABZ.Application.Services.Crops;
 using SABZ.Application.Services.CropRecommendation;
 using SABZ.Application.Services.CropSuitability;
+using SABZ.Application.Services.DiseaseDetection;
 using SABZ.Application.Services.Farms;
 using SABZ.Application.Services.Weather;
 using SABZ.Infrastructure.Persistence;
 using SABZ.Infrastructure.Repositories;
 using SABZ.Infrastructure.Services;
+using SABZ.Infrastructure.Services.DiseaseDetection;
 using SABZ.Infrastructure.Services.Weather;
 
 namespace SABZ.Infrastructure;
@@ -63,6 +66,21 @@ public static class DependencyInjection
         services.Configure<CropRecommendationSettings>(configuration.GetSection(CropRecommendationSettings.SectionName));
         services.AddScoped<ICropChangeRuleRepository, CropChangeRuleRepository>();
         services.AddScoped<ICropRecommendationService, CropRecommendationService>();
+
+        // Disease detection (Prompt 6) - image validation, AI vision provider, curated advice
+        services.Configure<DiseaseDetectionSettings>(configuration.GetSection(DiseaseDetectionSettings.SectionName));
+        services.AddHttpClient(QwenVisionDiseaseDetectionProvider.HttpClientName, (sp, client) =>
+        {
+            var settings = sp.GetRequiredService<IOptions<DiseaseDetectionSettings>>().Value;
+            client.BaseAddress = new Uri(settings.ApiBaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(settings.TimeoutSeconds);
+            if (!string.IsNullOrWhiteSpace(settings.ApiKey))
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
+        });
+        services.AddScoped<IImageValidator, SharpImageValidator>();
+        services.AddScoped<IPlantDiseaseDetectionProvider, QwenVisionDiseaseDetectionProvider>();
+        services.AddScoped<IDiseaseInformationRepository, DiseaseInformationRepository>();
+        services.AddScoped<IDiseaseDetectionService, DiseaseDetectionService>();
 
         return services;
     }
