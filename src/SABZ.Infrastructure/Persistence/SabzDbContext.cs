@@ -16,6 +16,7 @@ public class SabzDbContext : DbContext
     public DbSet<Crop> Crops => Set<Crop>();
     public DbSet<CropRequirement> CropRequirements => Set<CropRequirement>();
     public DbSet<RegionalCropSuitability> RegionalCropSuitabilities => Set<RegionalCropSuitability>();
+    public DbSet<CropChangeRule> CropChangeRules => Set<CropChangeRule>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -140,6 +141,18 @@ public class SabzDbContext : DbContext
             entity.Property(r => r.Source).HasMaxLength(500);
             entity.HasIndex(r => r.CropCatalogId);
             entity.HasOne(r => r.CropCatalog).WithMany().HasForeignKey(r => r.CropCatalogId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // --- CropChangeRule (data-driven crop-change/rotation guidance) ---
+        modelBuilder.Entity<CropChangeRule>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.PreviousCategory).IsRequired().HasMaxLength(100);
+            entity.Property(r => r.NextCategory).IsRequired().HasMaxLength(100);
+            entity.Property(r => r.Effect).IsRequired().HasMaxLength(20);
+            entity.Property(r => r.Explanation).IsRequired().HasMaxLength(500);
+            entity.Property(r => r.Source).HasMaxLength(500);
+            entity.HasIndex(r => new { r.PreviousCategory, r.NextCategory }).IsUnique();
         });
 
         // --- Seed Data ---

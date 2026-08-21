@@ -8,6 +8,10 @@ public class Crop
     public required string CropName { get; set; }
     public required string Season { get; set; }
     public DateTime? PlantingDate { get; set; }
+
+    /// <summary>Date the crop was harvested (set when the crop cycle completes).</summary>
+    public DateTime? HarvestDate { get; set; }
+
     public string? GrowthStage { get; set; }
     public string? PreviousCrop { get; set; }
     public string Status { get; set; } = "Active";

@@ -8,6 +8,7 @@ public class CropResponseDto
     public string CropName { get; set; } = string.Empty;
     public string Season { get; set; } = string.Empty;
     public DateTime? PlantingDate { get; set; }
+    public DateTime? HarvestDate { get; set; }
     public string? GrowthStage { get; set; }
     public string? PreviousCrop { get; set; }
     public string Status { get; set; } = string.Empty;

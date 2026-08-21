@@ -54,6 +54,7 @@ public class CropService : ICropService
             CropName = dto.CropName,
             Season = dto.Season,
             PlantingDate = dto.PlantingDate,
+            HarvestDate = dto.HarvestDate,
             GrowthStage = dto.GrowthStage,
             PreviousCrop = dto.PreviousCrop,
             Status = status,
@@ -108,6 +109,7 @@ public class CropService : ICropService
         crop.CropCatalogId = dto.CropCatalogId;
         crop.Season = dto.Season;
         crop.PlantingDate = dto.PlantingDate;
+        crop.HarvestDate = dto.HarvestDate;
         crop.GrowthStage = dto.GrowthStage;
         crop.PreviousCrop = dto.PreviousCrop;
         crop.Status = status;
@@ -159,6 +161,7 @@ public class CropService : ICropService
             CropName = crop.CropName,
             Season = crop.Season,
             PlantingDate = crop.PlantingDate,
+            HarvestDate = crop.HarvestDate,
             GrowthStage = crop.GrowthStage,
             PreviousCrop = crop.PreviousCrop,
             Status = crop.Status,

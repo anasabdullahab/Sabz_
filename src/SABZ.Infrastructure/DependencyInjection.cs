@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using SABZ.Application.Interfaces;
 using SABZ.Application.Services.Auth;
 using SABZ.Application.Services.Crops;
+using SABZ.Application.Services.CropRecommendation;
 using SABZ.Application.Services.CropSuitability;
 using SABZ.Application.Services.Farms;
 using SABZ.Application.Services.Weather;
@@ -57,6 +58,11 @@ public static class DependencyInjection
         services.Configure<CropSuitabilitySettings>(configuration.GetSection(CropSuitabilitySettings.SectionName));
         services.AddScoped<ICropSuitabilityDataRepository, CropSuitabilityDataRepository>();
         services.AddScoped<ICropSuitabilityService, CropSuitabilityService>();
+
+        // Crop recommendation (Prompt 5) - reuses suitability + weather, adds crop-history guidance
+        services.Configure<CropRecommendationSettings>(configuration.GetSection(CropRecommendationSettings.SectionName));
+        services.AddScoped<ICropChangeRuleRepository, CropChangeRuleRepository>();
+        services.AddScoped<ICropRecommendationService, CropRecommendationService>();
 
         return services;
     }

@@ -23,6 +23,7 @@ public static class SeedData
         SeedCropCatalog(modelBuilder);
         SeedCropRequirements(modelBuilder);
         SeedRegionalSuitability(modelBuilder);
+        SeedCropChangeRules(modelBuilder);
     }
 
     // Province, District, and Tehsil seeding has been moved to LocationDataSeeder (runtime JSON-based).
@@ -150,6 +151,24 @@ public static class SeedData
 
             new { Id = 43, ProvinceId = 3, DistrictId = (int?)null, TehsilId = (int?)null, CropCatalogId = 1, Season = "Rabi", SuitabilityScore = 5, SuitabilityLevel = "Moderate", Notes = "Balochistan grows wheat in irrigated highland areas.", Source = source },
             new { Id = 44, ProvinceId = 3, DistrictId = (int?)null, TehsilId = (int?)null, CropCatalogId = 12, Season = "Rabi", SuitabilityScore = 5, SuitabilityLevel = "Moderate", Notes = "Balochistan highlands support gram under rainfall.", Source = source }
+        );
+    }
+
+    private static void SeedCropChangeRules(ModelBuilder mb)
+    {
+        // Source: Initial SABZ crop-change reference dataset (general agronomic knowledge).
+        // Category-level rules keyed by CropCatalog.Category. This is a small, clearly
+        // labelled foundation dataset - NOT a complete scientific rotation model.
+        // Extend with expert-reviewed / official agricultural sources in future phases.
+        const string source = "Initial SABZ crop-change reference dataset (general agronomic knowledge, expert review recommended)";
+
+        mb.Entity<CropChangeRule>().HasData(
+            new { Id = 1, PreviousCategory = "Pulse", NextCategory = "Cereal", Effect = "Positive", Explanation = "Pulses are generally considered to leave residual soil nitrogen, which commonly benefits a following cereal crop.", IsActive = true, Source = source },
+            new { Id = 2, PreviousCategory = "Cereal", NextCategory = "Pulse", Effect = "Positive", Explanation = "Alternating cereals with pulses is widely considered sound rotation practice; pulses help maintain soil nitrogen.", IsActive = true, Source = source },
+            new { Id = 3, PreviousCategory = "Cereal", NextCategory = "Cereal", Effect = "Caution", Explanation = "Repeated cereal cropping can build up similar pests/diseases and draw on the same nutrients; rotating with a different crop group is commonly advised.", IsActive = true, Source = source },
+            new { Id = 4, PreviousCategory = "Vegetable", NextCategory = "Vegetable", Effect = "Caution", Explanation = "Growing vegetables back-to-back can increase pest and disease carry-over; rotating with a different crop group is commonly advised.", IsActive = true, Source = source },
+            new { Id = 5, PreviousCategory = "Pulse", NextCategory = "Pulse", Effect = "Caution", Explanation = "Consecutive pulse crops can build up pulse-specific diseases; alternating with another crop group is commonly advised.", IsActive = true, Source = source },
+            new { Id = 6, PreviousCategory = "Oilseed", NextCategory = "Cereal", Effect = "Positive", Explanation = "Oilseeds are generally considered a good preceding crop for cereals due to different rooting and nutrient use.", IsActive = true, Source = source }
         );
     }
 }

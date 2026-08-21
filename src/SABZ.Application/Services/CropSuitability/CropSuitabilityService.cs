@@ -158,7 +158,8 @@ public class CropSuitabilityService : ICropSuitabilityService
         var result = new CropSuitabilityResultDto
         {
             CropCatalogId = requirement.CropCatalogId,
-            CropName = requirement.CropCatalog?.Name ?? $"Crop {requirement.CropCatalogId}"
+            CropName = requirement.CropCatalog?.Name ?? $"Crop {requirement.CropCatalogId}",
+            CandidateCategory = requirement.CropCatalog?.Category
         };
 
         // Season: the requirement itself exists for the evaluation season.

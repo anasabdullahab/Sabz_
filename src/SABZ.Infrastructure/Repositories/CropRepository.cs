@@ -29,6 +29,17 @@ public class CropRepository : ICropRepository
             .ToListAsync();
     }
 
+    public async Task<List<Crop>> GetHistoryByFarmIdAsync(Guid farmId)
+    {
+        // Planned records are forward-looking and never represent a grown crop.
+        return await _context.Crops
+            .Include(c => c.CropCatalog)
+            .Where(c => c.FarmId == farmId && c.Status != "Planned")
+            .OrderByDescending(c => c.PlantingDate ?? c.CreatedAt)
+            .ThenByDescending(c => c.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task AddAsync(Crop crop)
     {
         await _context.Crops.AddAsync(crop);

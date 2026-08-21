@@ -8,6 +8,9 @@ public class CropSuitabilityResultDto
     public int CropCatalogId { get; set; }
     public string CropName { get; set; } = string.Empty;
 
+    /// <summary>CropCatalog category (e.g. "Cereal", "Pulse"); used by Prompt 5 crop-change matching.</summary>
+    public string? CandidateCategory { get; set; }
+
     /// <summary>Total SABZ suitability score, 0-100.</summary>
     public int SuitabilityScore { get; set; }
 
