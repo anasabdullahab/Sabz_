@@ -20,6 +20,7 @@ public class SabzDbContext : DbContext
     public DbSet<DiseaseInformation> DiseaseInformations => Set<DiseaseInformation>();
     public DbSet<CropMonitoringRule> CropMonitoringRules => Set<CropMonitoringRule>();
     public DbSet<CropMonitoringCheck> CropMonitoringChecks => Set<CropMonitoringCheck>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -218,6 +219,31 @@ public class SabzDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(c => c.RuleId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // --- Notification (Prompt 8: central in-app notifications) ---
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(n => n.Id);
+            entity.Property(n => n.Title).IsRequired().HasMaxLength(200);
+            entity.Property(n => n.Message).IsRequired().HasMaxLength(1000);
+            entity.Property(n => n.Category).IsRequired().HasMaxLength(50);
+            entity.Property(n => n.ReferenceType).IsRequired().HasMaxLength(50).HasDefaultValue("None");
+            entity.Property(n => n.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // Read-path performance.
+            entity.HasIndex(n => new { n.UserId, n.CreatedAt });
+            entity.HasIndex(n => new { n.UserId, n.IsRead });
+
+            // Database-level duplicate prevention: at most one notification per
+            // (user, category, referenced entity). ReferenceType/ReferenceId are
+            // non-nullable so the unique index behaves deterministically.
+            entity.HasIndex(n => new { n.UserId, n.Category, n.ReferenceType, n.ReferenceId }).IsUnique();
+
+            entity.HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // --- Seed Data ---

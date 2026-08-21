@@ -11,6 +11,7 @@ using SABZ.Application.Services.CropSuitability;
 using SABZ.Application.Services.DiseaseDetection;
 using SABZ.Application.Services.Farms;
 using SABZ.Application.Services.Monitoring;
+using SABZ.Application.Services.Notifications;
 using SABZ.Application.Services.Weather;
 using SABZ.Infrastructure.Persistence;
 using SABZ.Infrastructure.Repositories;
@@ -49,6 +50,12 @@ public static class DependencyInjection
         services.AddScoped<ICropMonitoringRuleRepository, CropMonitoringRuleRepository>();
         services.AddScoped<ICropMonitoringCheckRepository, CropMonitoringCheckRepository>();
         services.AddScoped<IMonitoringService, MonitoringService>();
+
+        // In-app notifications (Prompt 8) - central reminder foundation (in-app only,
+        // no SMS/email/push); due notifications are generated lazily from the
+        // monitoring read path, never by background jobs
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         // Weather configuration and caching
         services.Configure<WeatherSettings>(configuration.GetSection(WeatherSettings.SectionName));

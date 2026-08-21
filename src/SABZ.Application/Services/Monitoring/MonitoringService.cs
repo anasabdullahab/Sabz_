@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using SABZ.Application.DTOs.Monitoring;
 using SABZ.Application.Interfaces;
 using SABZ.Domain.Entities;
@@ -34,17 +35,23 @@ public class MonitoringService : IMonitoringService
     private readonly ICropMonitoringRuleRepository _ruleRepository;
     private readonly ICropMonitoringCheckRepository _checkRepository;
     private readonly ISystemClock _clock;
+    private readonly INotificationService _notificationService;
+    private readonly ILogger<MonitoringService> _logger;
 
     public MonitoringService(
         ICropRepository cropRepository,
         ICropMonitoringRuleRepository ruleRepository,
         ICropMonitoringCheckRepository checkRepository,
-        ISystemClock clock)
+        ISystemClock clock,
+        INotificationService notificationService,
+        ILogger<MonitoringService> logger)
     {
         _cropRepository = cropRepository;
         _ruleRepository = ruleRepository;
         _checkRepository = checkRepository;
         _clock = clock;
+        _notificationService = notificationService;
+        _logger = logger;
     }
 
     // ------------------------------------------------------------------
@@ -63,10 +70,24 @@ public class MonitoringService : IMonitoringService
     {
         var now = _clock.UtcNow;
         var checks = await _checkRepository.GetByUserIdAsync(userId, ct);
-
-        return checks
+        var dueChecks = checks
             .Where(c => c.Status == MonitoringCheckStatus.Scheduled && c.ScheduledDate <= now)
             .OrderBy(c => c.ScheduledDate)
+            .ToList();
+
+        // Prompt 8: lazy, idempotent creation of MonitoringDue notifications for
+        // the due checks. Notification failures must never break the monitoring
+        // read path or change monitoring state.
+        try
+        {
+            await _notificationService.EnsureDueNotificationsAsync(dueChecks, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Due-notification generation failed for user {UserId}; due checks still returned.", userId);
+        }
+
+        return dueChecks
             .Select(c => MapToDto(c, now))
             .ToList();
     }

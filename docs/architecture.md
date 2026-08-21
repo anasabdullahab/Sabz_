@@ -50,4 +50,5 @@ Dependency direction is strictly inward: API -> Infrastructure -> Application ->
 | Crop recommendation | Reuses suitability engine + crop history + `CropChangeRule` reference data (Prompt 5) |
 | Disease detection | AI vision pipeline (image validation → plant relevance → disease → advice) via `IPlantDiseaseDetectionProvider` + curated `DiseaseInformation` data (Prompt 6) |
 | Crop monitoring | Data-driven schedule from `CropMonitoringRule` reference data; checks generated per crop, computed Due/Upcoming against `ISystemClock` UTC; farmer observations recommend (never invoke) the Prompt 6 photo workflow (Prompt 7) |
+| In-app notifications | Central `Notification` store (in-app only, no external delivery); idempotent `MonitoringDue` reminders generated lazily from the monitoring due read path with app-level pre-check + unique index (Prompt 8) |
 | Error handling | Exception middleware + problem-style JSON errors |
