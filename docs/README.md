@@ -17,6 +17,7 @@ in the order the features were built.
 | [prompt-6-disease-detection.md](prompt-6-disease-detection.md) | AI crop disease identification & agricultural advice foundation |
 | [prompt-7-crop-monitoring.md](prompt-7-crop-monitoring.md) | Smart crop monitoring schedule & farmer reminder foundation |
 | [prompt-8-notifications.md](prompt-8-notifications.md) | Central in-app notification & reminder foundation |
+| [prompt-9-financial.md](prompt-9-financial.md) | Farm profit & loss (P&L) financial ledger foundation |
 | [pakistan-admin-data.md](pakistan-admin-data.md) | Pakistan administrative divisions dataset reference |
 
 ## API base
@@ -24,5 +25,5 @@ in the order the features were built.
 - Development server: `http://localhost:5073`
 - Swagger UI: `http://localhost:5073/swagger`
 - All farm/weather/crop-suitability/crop-recommendation/disease-detection/
-  monitoring/notification endpoints require a JWT bearer token obtained from
-  `POST /api/auth/login`.
+  monitoring/notification/financial endpoints require a JWT bearer token
+  obtained from `POST /api/auth/login`.

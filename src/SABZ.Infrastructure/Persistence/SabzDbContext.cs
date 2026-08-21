@@ -21,6 +21,7 @@ public class SabzDbContext : DbContext
     public DbSet<CropMonitoringRule> CropMonitoringRules => Set<CropMonitoringRule>();
     public DbSet<CropMonitoringCheck> CropMonitoringChecks => Set<CropMonitoringCheck>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<FinancialTransaction> FinancialTransactions => Set<FinancialTransaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -244,6 +245,37 @@ public class SabzDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- FinancialTransaction (Prompt 9: farm P&L ledger) ---
+        modelBuilder.Entity<FinancialTransaction>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.TransactionType).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(t => t.Category).IsRequired().HasMaxLength(100);
+            // Money: decimal only (never float/double), PKR with 2 decimals.
+            entity.Property(t => t.Amount).HasPrecision(18, 2);
+            entity.Property(t => t.Notes).HasMaxLength(1000);
+            entity.Property(t => t.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // P&L read paths: date-range summaries, per-type totals, crop-level.
+            entity.HasIndex(t => new { t.FarmId, t.TransactionDate });
+            entity.HasIndex(t => new { t.FarmId, t.TransactionType });
+            entity.HasIndex(t => t.CropId);
+
+            // Farm deletion removes its ledger (single cascade path). The
+            // CropId FK must be Restrict in the database because SQL Server
+            // rejects a second cascading path (Farms -> Crops -> here, error
+            // 1785); the SetNull semantics for crop deletion are enforced in
+            // the application layer (CropService + NullifyCropReferencesAsync).
+            entity.HasOne(t => t.Farm)
+                .WithMany()
+                .HasForeignKey(t => t.FarmId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(t => t.Crop)
+                .WithMany()
+                .HasForeignKey(t => t.CropId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // --- Seed Data ---

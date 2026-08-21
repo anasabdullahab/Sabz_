@@ -12,6 +12,7 @@ public class CropService : ICropService
     private readonly IFarmRepository _farmRepository;
     private readonly ICropMonitoringRuleRepository _monitoringRuleRepository;
     private readonly ICropMonitoringCheckRepository _monitoringCheckRepository;
+    private readonly IFinancialTransactionRepository _financialTransactionRepository;
     private readonly ISystemClock _clock;
     private readonly ILogger<CropService> _logger;
 
@@ -35,6 +36,7 @@ public class CropService : ICropService
         IFarmRepository farmRepository,
         ICropMonitoringRuleRepository monitoringRuleRepository,
         ICropMonitoringCheckRepository monitoringCheckRepository,
+        IFinancialTransactionRepository financialTransactionRepository,
         ISystemClock clock,
         ILogger<CropService> logger)
     {
@@ -42,6 +44,7 @@ public class CropService : ICropService
         _farmRepository = farmRepository;
         _monitoringRuleRepository = monitoringRuleRepository;
         _monitoringCheckRepository = monitoringCheckRepository;
+        _financialTransactionRepository = financialTransactionRepository;
         _clock = clock;
         _logger = logger;
     }
@@ -193,6 +196,11 @@ public class CropService : ICropService
 
         if (crop.Farm.UserId != userId)
             throw new ForbiddenException("You do not have access to this crop.");
+
+        // Prompt 9: keep financial history, drop the crop link (application-level
+        // SetNull - the database FK is Restrict). Saved atomically with the crop
+        // removal through the shared scoped DbContext.
+        await _financialTransactionRepository.NullifyCropReferencesAsync(crop.Id);
 
         _cropRepository.Remove(crop);
         await _cropRepository.SaveChangesAsync();

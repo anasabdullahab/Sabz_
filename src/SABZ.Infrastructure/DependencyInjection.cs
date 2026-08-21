@@ -10,6 +10,7 @@ using SABZ.Application.Services.CropRecommendation;
 using SABZ.Application.Services.CropSuitability;
 using SABZ.Application.Services.DiseaseDetection;
 using SABZ.Application.Services.Farms;
+using SABZ.Application.Services.Financial;
 using SABZ.Application.Services.Monitoring;
 using SABZ.Application.Services.Notifications;
 using SABZ.Application.Services.Weather;
@@ -56,6 +57,11 @@ public static class DependencyInjection
         // monitoring read path, never by background jobs
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationService, NotificationService>();
+
+        // Farm P&L financial ledger (Prompt 9) - farmer-entered income/expenses,
+        // dynamically computed summaries, decimal money, JWT-derived ownership
+        services.AddScoped<IFinancialTransactionRepository, FinancialTransactionRepository>();
+        services.AddScoped<IFinancialService, FinancialService>();
 
         // Weather configuration and caching
         services.Configure<WeatherSettings>(configuration.GetSection(WeatherSettings.SectionName));
