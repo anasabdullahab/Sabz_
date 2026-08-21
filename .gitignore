@@ -1,0 +1,35 @@
+# ---- Build output ----
+bin/
+obj/
+publish/
+
+# ---- Visual Studio / IDE ----
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ---- Rider / VS Code ----
+.idea/
+.vscode/
+
+# ---- Node (if any frontend tooling is added later) ----
+node_modules/
+dist/
+
+# ---- Environment / local secrets ----
+.env
+.env.*
+*.pfx
+*.snk
+
+# Local app configuration contains the JWT signing key and machine-specific
+# connection string. Copy appsettings.template.json to appsettings.json and
+# provide your own values.
+src/SABZ.API/appsettings.json
+
+# ---- OS / temporary files ----
+Thumbs.db
+*.tmp
+*.log
