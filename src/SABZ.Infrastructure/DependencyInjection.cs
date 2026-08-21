@@ -63,6 +63,11 @@ public static class DependencyInjection
         services.AddScoped<IFinancialTransactionRepository, FinancialTransactionRepository>();
         services.AddScoped<IFinancialService, FinancialService>();
 
+        // Financial health & readiness intelligence (Prompt 10) - read-only
+        // analytics derived from the Prompt 9 ledger; no persisted scores,
+        // no AI, no background jobs, no new tables
+        services.AddScoped<IFinancialHealthService, FinancialHealthService>();
+
         // Weather configuration and caching
         services.Configure<WeatherSettings>(configuration.GetSection(WeatherSettings.SectionName));
         services.AddMemoryCache();

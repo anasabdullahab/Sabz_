@@ -52,4 +52,5 @@ Dependency direction is strictly inward: API -> Infrastructure -> Application ->
 | Crop monitoring | Data-driven schedule from `CropMonitoringRule` reference data; checks generated per crop, computed Due/Upcoming against `ISystemClock` UTC; farmer observations recommend (never invoke) the Prompt 6 photo workflow (Prompt 7) |
 | In-app notifications | Central `Notification` store (in-app only, no external delivery); idempotent `MonitoringDue` reminders generated lazily from the monitoring due read path with app-level pre-check + unique index (Prompt 8) |
 | Financial ledger | Farmer-entered income/expense `FinancialTransaction` rows (no UserId column, ownership via farm); P&L summaries computed dynamically, never persisted; decimal(18,2) money (Prompt 9) |
+| Financial health & readiness | Read-only aggregates over the Prompt 9 ledger (health indicator, category breakdown, monthly activity, recorded-data completeness 0-100); SQL-side, never persisted, no new tables, no AI; not a loan/credit/banking/insurance/investment decision (Prompt 10) |
 | Error handling | Exception middleware + problem-style JSON errors |
