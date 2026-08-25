@@ -8,6 +8,7 @@ using SABZ.Application.Services.Auth;
 using SABZ.Application.Services.Crops;
 using SABZ.Application.Services.CropRecommendation;
 using SABZ.Application.Services.CropSuitability;
+using SABZ.Application.Services.Dashboard;
 using SABZ.Application.Services.DiseaseDetection;
 using SABZ.Application.Services.Farms;
 using SABZ.Application.Services.Financial;
@@ -74,6 +75,13 @@ public static class DependencyInjection
         // Prompt 7 monitoring checks; nothing derived is persisted, no AI,
         // no background jobs, no new tables
         services.AddScoped<IFarmPerformanceService, FarmPerformanceService>();
+
+        // Unified farm dashboard & insights (Prompt 12) - read-only
+        // aggregation/orchestration over existing features (farms, crops,
+        // Prompt 7 monitoring, Prompt 8 notifications, Prompt 9 ledger,
+        // Prompt 10 health, Prompt 11 performance, Prompt 3 weather); nothing
+        // derived is persisted, no new tables, no background jobs, no AI
+        services.AddScoped<IFarmDashboardService, FarmDashboardService>();
 
         // Weather configuration and caching
         services.Configure<WeatherSettings>(configuration.GetSection(WeatherSettings.SectionName));

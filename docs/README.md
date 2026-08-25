@@ -20,6 +20,7 @@ in the order the features were built.
 | [prompt-9-financial.md](prompt-9-financial.md) | Farm profit & loss (P&L) financial ledger foundation |
 | [prompt-10-financial-health.md](prompt-10-financial-health.md) | Farm financial health & readiness intelligence (read-only) |
 | [prompt-11-farm-performance.md](prompt-11-farm-performance.md) | Farm performance dashboard & decision intelligence (read-only) |
+| [prompt-12-farm-dashboard.md](prompt-12-farm-dashboard.md) | Unified farm dashboard & insights (read-only aggregation) |
 | [pakistan-admin-data.md](pakistan-admin-data.md) | Pakistan administrative divisions dataset reference |
 
 ## API base
@@ -27,5 +28,6 @@ in the order the features were built.
 - Development server: `http://localhost:5073`
 - Swagger UI: `http://localhost:5073/swagger`
 - All farm/weather/crop-suitability/crop-recommendation/disease-detection/
-  monitoring/notification/financial/financial-health/farm-performance
-  endpoints require a JWT bearer token obtained from `POST /api/auth/login`.
+  monitoring/notification/financial/financial-health/farm-performance/
+  farm-dashboard endpoints require a JWT bearer token obtained from
+  `POST /api/auth/login`.
