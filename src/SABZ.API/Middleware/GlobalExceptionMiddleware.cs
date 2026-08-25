@@ -77,6 +77,12 @@ public class GlobalExceptionMiddleware
                 errorResponse = new { message = diseaseException.Message };
                 break;
 
+            case AgronomistProviderException agronomistException:
+                _logger.LogWarning(agronomistException, "Agronomist AI/speech provider error.");
+                response.StatusCode = (int)HttpStatusCode.BadGateway;
+                errorResponse = new { message = agronomistException.Message };
+                break;
+
             default:
                 _logger.LogError(exception, "An unexpected error occurred.");
                 response.StatusCode = (int)HttpStatusCode.InternalServerError;

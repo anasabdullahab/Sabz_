@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using SABZ.Application.Interfaces;
+using SABZ.Application.Services.Agronomist;
 using SABZ.Application.Services.Auth;
 using SABZ.Application.Services.Crops;
 using SABZ.Application.Services.CropRecommendation;
@@ -19,6 +20,7 @@ using SABZ.Application.Services.Weather;
 using SABZ.Infrastructure.Persistence;
 using SABZ.Infrastructure.Repositories;
 using SABZ.Infrastructure.Services;
+using SABZ.Infrastructure.Services.Agronomist;
 using SABZ.Infrastructure.Services.DiseaseDetection;
 using SABZ.Infrastructure.Services.Weather;
 
@@ -121,6 +123,24 @@ public static class DependencyInjection
         services.AddScoped<IPlantDiseaseDetectionProvider, QwenVisionDiseaseDetectionProvider>();
         services.AddScoped<IDiseaseInformationRepository, DiseaseInformationRepository>();
         services.AddScoped<IDiseaseDetectionService, DiseaseDetectionService>();
+
+        // Voice-first AI agronomist assistant (Prompt 13) - information & guidance
+        // only, strictly read-only. Reuses the shared DashScope connection already
+        // configured for disease detection (same ApiBaseUrl + ApiKey), so no second
+        // API key or HTTP stack is introduced. No persisted chat history, no
+        // background jobs, no new tables.
+        services.Configure<AgronomistSettings>(configuration.GetSection(AgronomistSettings.SectionName));
+        services.AddHttpClient(QwenAgronomistAiProvider.HttpClientName, (sp, client) =>
+        {
+            var connection = sp.GetRequiredService<IOptions<DiseaseDetectionSettings>>().Value;
+            client.BaseAddress = new Uri(connection.ApiBaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(connection.TimeoutSeconds);
+            if (!string.IsNullOrWhiteSpace(connection.ApiKey))
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", connection.ApiKey);
+        });
+        services.AddScoped<IAgronomistAiProvider, QwenAgronomistAiProvider>();
+        services.AddScoped<ISpeechToTextProvider, QwenSpeechToTextProvider>();
+        services.AddScoped<IAgronomistAssistantService, AgronomistAssistantService>();
 
         return services;
     }
