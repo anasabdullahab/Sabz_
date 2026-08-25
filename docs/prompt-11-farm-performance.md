@@ -118,6 +118,10 @@ Every response also carries the mandatory `disclaimer`: *"Based only on data
 recorded in SABZ. This does not measure real-world farm performance, farming
 skill, future outcomes, creditworthiness, or financial eligibility."*
 
+> "Farm Performance is calculated only from data recorded in SABZ. It does not
+> measure the farmer's real-world performance, farming skill, future outcomes,
+> creditworthiness, or financial eligibility."
+
 ## Recorded activity definition
 
 `GET .../performance/activity` summarizes **recorded activity in SABZ**,
