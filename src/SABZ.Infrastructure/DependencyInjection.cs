@@ -13,6 +13,7 @@ using SABZ.Application.Services.Farms;
 using SABZ.Application.Services.Financial;
 using SABZ.Application.Services.Monitoring;
 using SABZ.Application.Services.Notifications;
+using SABZ.Application.Services.Performance;
 using SABZ.Application.Services.Weather;
 using SABZ.Infrastructure.Persistence;
 using SABZ.Infrastructure.Repositories;
@@ -67,6 +68,12 @@ public static class DependencyInjection
         // analytics derived from the Prompt 9 ledger; no persisted scores,
         // no AI, no background jobs, no new tables
         services.AddScoped<IFinancialHealthService, FinancialHealthService>();
+
+        // Farm performance dashboard & decision intelligence (Prompt 11) -
+        // read-only intelligence derived from crops, the Prompt 9 ledger and
+        // Prompt 7 monitoring checks; nothing derived is persisted, no AI,
+        // no background jobs, no new tables
+        services.AddScoped<IFarmPerformanceService, FarmPerformanceService>();
 
         // Weather configuration and caching
         services.Configure<WeatherSettings>(configuration.GetSection(WeatherSettings.SectionName));

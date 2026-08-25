@@ -192,6 +192,49 @@ public class FinancialTransactionRepository : IFinancialTransactionRepository
             .ToList();
     }
 
+    // ------------------------------------------------------------------
+    //  Prompt 11 farm performance aggregates (SQL-side, AsNoTracking,
+    //  never persisted)
+    // ------------------------------------------------------------------
+
+    public async Task<List<CropFinancialTotalRow>> GetCropTotalsAsync(
+        Guid farmId, DateTime? fromDate, DateTime? toDate, CancellationToken ct = default)
+    {
+        // Reuses the shared health filter; crop-linked rows only, because
+        // farm-level transactions cannot be attributed to a crop ranking.
+        var grouped = await FilterForHealth(farmId, cropId: null, fromDate, toDate)
+            .Where(t => t.CropId != null)
+            .GroupBy(t => new { CropId = t.CropId!.Value, t.TransactionType })
+            .Select(g => new { g.Key.CropId, g.Key.TransactionType, Total = g.Sum(t => t.Amount), Count = g.Count() })
+            .ToListAsync(ct);
+
+        return grouped
+            .GroupBy(g => g.CropId)
+            .Select(g =>
+            {
+                var income = g.FirstOrDefault(x => x.TransactionType == FinancialTransactionType.Income);
+                var expense = g.FirstOrDefault(x => x.TransactionType == FinancialTransactionType.Expense);
+
+                return new CropFinancialTotalRow(
+                    g.Key,
+                    income?.Total ?? 0m,
+                    expense?.Total ?? 0m,
+                    income?.Count ?? 0,
+                    expense?.Count ?? 0);
+            })
+            .ToList();
+    }
+
+    public async Task<List<DateTime>> GetDistinctTransactionDatesAsync(Guid farmId, CancellationToken ct = default)
+    {
+        return await _context.FinancialTransactions
+            .AsNoTracking()
+            .Where(t => t.FarmId == farmId)
+            .Select(t => t.TransactionDate)
+            .Distinct()
+            .ToListAsync(ct);
+    }
+
     public async Task AddAsync(FinancialTransaction transaction, CancellationToken ct = default)
     {
         await _context.FinancialTransactions.AddAsync(transaction, ct);

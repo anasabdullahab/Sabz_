@@ -57,6 +57,17 @@ public class CropMonitoringCheckRepository : ICropMonitoringCheckRepository
         return new HashSet<int>(ruleIds);
     }
 
+    public async Task<List<MonitoringCheckEventRow>> GetFarmCheckEventsAsync(Guid farmId, CancellationToken ct = default)
+    {
+        // Projects only the lifecycle columns; full check entities (rule
+        // snapshots, inspection items) are never loaded for aggregation.
+        return await _context.CropMonitoringChecks
+            .AsNoTracking()
+            .Where(c => c.FarmId == farmId)
+            .Select(c => new MonitoringCheckEventRow(c.Status, c.CompletedAt, c.SkippedAt))
+            .ToListAsync(ct);
+    }
+
     public async Task AddAsync(CropMonitoringCheck check, CancellationToken ct = default)
     {
         await _context.CropMonitoringChecks.AddAsync(check, ct);

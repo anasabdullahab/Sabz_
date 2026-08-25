@@ -25,6 +25,18 @@ public sealed record CategoryTotalRow(FinancialTransactionType Type, string Cate
 public sealed record MonthlyTotalRow(int Year, int Month, FinancialTransactionType Type, decimal Total, int Count);
 
 /// <summary>
+/// Per-crop recorded totals for the Prompt 11 performance breakdown/ranking.
+/// One row per crop that has at least one transaction; pure SQL aggregation,
+/// never persisted.
+/// </summary>
+public sealed record CropFinancialTotalRow(
+    Guid CropId,
+    decimal IncomeTotal,
+    decimal ExpenseTotal,
+    int IncomeCount,
+    int ExpenseCount);
+
+/// <summary>
 /// Financial ledger persistence (Prompt 9). All queries are farm-scoped;
 /// user-scoping is enforced by the service via Farm.UserId.
 /// </summary>
@@ -68,6 +80,25 @@ public interface IFinancialTransactionRepository
     /// <summary>Grouped totals per (year, month, TransactionType) for monthly activity.</summary>
     Task<List<MonthlyTotalRow>> GetMonthlyTotalsAsync(
         Guid farmId, DateTime? fromDate, DateTime? toDate, CancellationToken ct = default);
+
+    // ------------------------------------------------------------------
+    //  Prompt 11 farm performance aggregates (SQL-side, AsNoTracking,
+    //  never persisted; same GROUP BY pattern as the Prompt 10 methods)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Recorded totals grouped per crop (CropId != null only) for the
+    /// performance breakdown and the deterministic best/weakest ranking.
+    /// </summary>
+    Task<List<CropFinancialTotalRow>> GetCropTotalsAsync(
+        Guid farmId, DateTime? fromDate, DateTime? toDate, CancellationToken ct = default);
+
+    /// <summary>
+    /// Distinct TransactionDate values of the farm's full history, for
+    /// recorded-activity day counting (bounded by the number of days, never
+    /// by the number of transactions).
+    /// </summary>
+    Task<List<DateTime>> GetDistinctTransactionDatesAsync(Guid farmId, CancellationToken ct = default);
 
     Task AddAsync(FinancialTransaction transaction, CancellationToken ct = default);
     void Update(FinancialTransaction transaction);
