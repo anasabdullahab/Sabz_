@@ -24,6 +24,9 @@ public class SabzDbContext : DbContext
     public DbSet<FinancialTransaction> FinancialTransactions => Set<FinancialTransaction>();
     public DbSet<CommunityPost> CommunityPosts => Set<CommunityPost>();
     public DbSet<CommunityComment> CommunityComments => Set<CommunityComment>();
+    public DbSet<MarketplaceListing> MarketplaceListings => Set<MarketplaceListing>();
+    public DbSet<MarketplaceConversation> MarketplaceConversations => Set<MarketplaceConversation>();
+    public DbSet<MarketplaceMessage> MarketplaceMessages => Set<MarketplaceMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -325,6 +328,98 @@ public class SabzDbContext : DbContext
             entity.HasOne(c => c.User)
                 .WithMany()
                 .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // --- MarketplaceListing (Prompt 15: farmer-to-farmer discovery) ---
+        modelBuilder.Entity<MarketplaceListing>(entity =>
+        {
+            entity.HasKey(l => l.Id);
+            entity.Property(l => l.Title).IsRequired().HasMaxLength(150);
+            entity.Property(l => l.Category).IsRequired().HasMaxLength(50);
+            entity.Property(l => l.ListingType).IsRequired().HasMaxLength(10);
+            entity.Property(l => l.Description).IsRequired().HasMaxLength(2000);
+            // Informational asking/rental rate only - fixed precision money,
+            // never floating point, never charged or processed by SABZ.
+            entity.Property(l => l.Price).HasPrecision(18, 2);
+            entity.Property(l => l.PriceUnit).IsRequired().HasMaxLength(20);
+            entity.Property(l => l.Location).IsRequired().HasMaxLength(200);
+            entity.Property(l => l.ContactNumber).IsRequired().HasMaxLength(30);
+            entity.Property(l => l.Condition).IsRequired().HasMaxLength(10);
+            entity.Property(l => l.Availability).IsRequired().HasMaxLength(100);
+            // Safe image reference only (absolute HTTP/HTTPS URL, enforced in
+            // the application layer); never a filesystem path or binary blob.
+            entity.Property(l => l.ImageUrl).HasMaxLength(2048);
+            entity.Property(l => l.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // Marketplace read paths: newest-first feed, per-seller listings
+            // and controlled-value filters, all DB-side paginated.
+            entity.HasIndex(l => new { l.UserId, l.CreatedAt });
+            entity.HasIndex(l => l.CreatedAt);
+            entity.HasIndex(l => l.Category);
+            entity.HasIndex(l => l.ListingType);
+
+            // User deletion is Restrict (marketplace history is preserved);
+            // a soft-deleted listing must never destroy private inbox history,
+            // so Listing -> Conversations is Restrict as well.
+            entity.HasOne(l => l.User)
+                .WithMany()
+                .HasForeignKey(l => l.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasMany(l => l.Conversations)
+                .WithOne(c => c.Listing)
+                .HasForeignKey(c => c.ListingId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // --- MarketplaceConversation (Prompt 15: private inbox thread) ---
+        modelBuilder.Entity<MarketplaceConversation>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(c => c.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // Inbox read paths: newest-first per participant, plus lookup by
+            // listing. The unique identity guarantees one conversation per
+            // listing/buyer/seller trio ("Message Seller" reuses it).
+            entity.HasIndex(c => new { c.BuyerUserId, c.UpdatedAt });
+            entity.HasIndex(c => new { c.SellerUserId, c.UpdatedAt });
+            entity.HasIndex(c => c.ListingId);
+            entity.HasIndex(c => new { c.ListingId, c.BuyerUserId, c.SellerUserId })
+                .IsUnique();
+
+            // All user relationships are Restrict to avoid multiple cascade
+            // paths (SQL Server error 1785); the only cascading edge in the
+            // marketplace graph is Conversation -> Messages.
+            entity.HasOne(c => c.BuyerUser)
+                .WithMany()
+                .HasForeignKey(c => c.BuyerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(c => c.SellerUser)
+                .WithMany()
+                .HasForeignKey(c => c.SellerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasMany(c => c.Messages)
+                .WithOne(m => m.Conversation)
+                .HasForeignKey(m => m.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- MarketplaceMessage (Prompt 15: private message) ---
+        modelBuilder.Entity<MarketplaceMessage>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.Content).IsRequired().HasMaxLength(2000);
+            entity.Property(m => m.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // Oldest-first message threads per conversation, DB-side.
+            entity.HasIndex(m => new { m.ConversationId, m.CreatedAt });
+
+            // Sender is Restrict (single cascade path stays Conversation ->
+            // Messages); sender identity always comes from the JWT.
+            entity.HasOne(m => m.SenderUser)
+                .WithMany()
+                .HasForeignKey(m => m.SenderUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

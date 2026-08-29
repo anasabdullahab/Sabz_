@@ -14,6 +14,7 @@ using SABZ.Application.Services.Dashboard;
 using SABZ.Application.Services.DiseaseDetection;
 using SABZ.Application.Services.Farms;
 using SABZ.Application.Services.Financial;
+using SABZ.Application.Services.Marketplace;
 using SABZ.Application.Services.Monitoring;
 using SABZ.Application.Services.Notifications;
 using SABZ.Application.Services.Performance;
@@ -150,6 +151,16 @@ public static class DependencyInjection
         services.AddScoped<ICommunityPostRepository, CommunityPostRepository>();
         services.AddScoped<ICommunityCommentRepository, CommunityCommentRepository>();
         services.AddScoped<ICommunityService, CommunityService>();
+
+        // Farmer marketplace + private inbox foundation (Prompt 15) -
+        // listing discovery (sale/rent) and participant-only conversations.
+        // Discovery/connection only: no payments, no orders, no financial
+        // integration, no notifications, no background jobs.
+        services.AddScoped<IMarketplaceListingRepository, MarketplaceListingRepository>();
+        services.AddScoped<IMarketplaceConversationRepository, MarketplaceConversationRepository>();
+        services.AddScoped<IMarketplaceMessageRepository, MarketplaceMessageRepository>();
+        services.AddScoped<IMarketplaceService, MarketplaceService>();
+        services.AddScoped<IMarketplaceInboxService, MarketplaceInboxService>();
 
         return services;
     }
