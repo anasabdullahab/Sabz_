@@ -22,6 +22,8 @@ public class SabzDbContext : DbContext
     public DbSet<CropMonitoringCheck> CropMonitoringChecks => Set<CropMonitoringCheck>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<FinancialTransaction> FinancialTransactions => Set<FinancialTransaction>();
+    public DbSet<CommunityPost> CommunityPosts => Set<CommunityPost>();
+    public DbSet<CommunityComment> CommunityComments => Set<CommunityComment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -275,6 +277,54 @@ public class SabzDbContext : DbContext
             entity.HasOne(t => t.Crop)
                 .WithMany()
                 .HasForeignKey(t => t.CropId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // --- CommunityPost (Prompt 14: farmer community feed) ---
+        modelBuilder.Entity<CommunityPost>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Content).IsRequired().HasMaxLength(2000);
+            // Safe image reference only (absolute HTTP/HTTPS URL, enforced in
+            // the application layer); never a filesystem path or binary blob.
+            entity.Property(p => p.ImageUrl).HasMaxLength(2048);
+            entity.Property(p => p.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // Community feed read paths: newest-first per-author and global
+            // listings, both DB-side paginated.
+            entity.HasIndex(p => new { p.UserId, p.CreatedAt });
+            entity.HasIndex(p => p.CreatedAt);
+
+            // User deletion is Restrict in the database (community content is
+            // preserved rather than silently destroyed); SQL Server would also
+            // reject a second cascading path through Comments -> UserId.
+            entity.HasOne(p => p.User)
+                .WithMany()
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasMany(p => p.Comments)
+                .WithOne(c => c.Post)
+                .HasForeignKey(c => c.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- CommunityComment (Prompt 14: discussion on community posts) ---
+        modelBuilder.Entity<CommunityComment>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Content).IsRequired().HasMaxLength(1000);
+            entity.Property(c => c.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // Oldest-first comment threads plus comment counting, DB-side.
+            entity.HasIndex(c => new { c.PostId, c.CreatedAt });
+            entity.HasIndex(c => new { c.UserId, c.CreatedAt });
+
+            // Single cascade path: Post deletion removes its comments (also
+            // soft-deleted in the application layer). UserId is Restrict to
+            // avoid a second cascading path (SQL Server error 1785).
+            entity.HasOne(c => c.User)
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

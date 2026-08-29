@@ -22,6 +22,7 @@ in the order the features were built.
 | [prompt-11-farm-performance.md](prompt-11-farm-performance.md) | Farm performance dashboard & decision intelligence (read-only) |
 | [prompt-12-farm-dashboard.md](prompt-12-farm-dashboard.md) | Unified farm dashboard & insights (read-only aggregation) |
 | [prompt-13-voice-agronomist.md](prompt-13-voice-agronomist.md) | Voice-first AI agronomist assistant (text + voice, read-only) |
+| [prompt-14-farmer-community.md](prompt-14-farmer-community.md) | Farmer community foundation (posts + comments, soft-deleted) |
 | [pakistan-admin-data.md](pakistan-admin-data.md) | Pakistan administrative divisions dataset reference |
 
 ## API base
@@ -30,5 +31,5 @@ in the order the features were built.
 - Swagger UI: `http://localhost:5073/swagger`
 - All farm/weather/crop-suitability/crop-recommendation/disease-detection/
   monitoring/notification/financial/financial-health/farm-performance/
-  farm-dashboard/agronomist endpoints require a JWT bearer token obtained from
-  `POST /api/auth/login`.
+  farm-dashboard/agronomist/community endpoints require a JWT bearer token
+  obtained from `POST /api/auth/login`.

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using SABZ.Application.Interfaces;
 using SABZ.Application.Services.Agronomist;
 using SABZ.Application.Services.Auth;
+using SABZ.Application.Services.Community;
 using SABZ.Application.Services.Crops;
 using SABZ.Application.Services.CropRecommendation;
 using SABZ.Application.Services.CropSuitability;
@@ -141,6 +142,14 @@ public static class DependencyInjection
         services.AddScoped<IAgronomistAiProvider, QwenAgronomistAiProvider>();
         services.AddScoped<ISpeechToTextProvider, QwenSpeechToTextProvider>();
         services.AddScoped<IAgronomistAssistantService, AgronomistAssistantService>();
+
+        // Farmer community foundation (Prompt 14) - agriculture-focused posts
+        // and comments for authenticated farmers. Soft-deleted rows stay
+        // hidden from all normal queries; reads are DB-side paginated SQL
+        // projections. No notifications, no AI moderation, no background jobs.
+        services.AddScoped<ICommunityPostRepository, CommunityPostRepository>();
+        services.AddScoped<ICommunityCommentRepository, CommunityCommentRepository>();
+        services.AddScoped<ICommunityService, CommunityService>();
 
         return services;
     }
