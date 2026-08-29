@@ -14,6 +14,7 @@ using SABZ.Application.Services.Dashboard;
 using SABZ.Application.Services.DiseaseDetection;
 using SABZ.Application.Services.Farms;
 using SABZ.Application.Services.Financial;
+using SABZ.Application.Services.InputCalculator;
 using SABZ.Application.Services.Marketplace;
 using SABZ.Application.Services.Monitoring;
 using SABZ.Application.Services.Notifications;
@@ -161,6 +162,12 @@ public static class DependencyInjection
         services.AddScoped<IMarketplaceMessageRepository, MarketplaceMessageRepository>();
         services.AddScoped<IMarketplaceService, MarketplaceService>();
         services.AddScoped<IMarketplaceInboxService, MarketplaceInboxService>();
+
+        // Precision crop input & dosage calculator (Prompt 16) - deterministic
+        // farm-area × dosage-rate arithmetic on demand. Reuses the existing
+        // farm/crop repositories and JWT ownership pattern; no persistence, no
+        // repository, no AI, no background jobs, zero schema impact.
+        services.AddScoped<IInputCalculatorService, InputCalculatorService>();
 
         return services;
     }

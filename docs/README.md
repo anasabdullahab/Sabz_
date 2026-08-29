@@ -24,6 +24,7 @@ in the order the features were built.
 | [prompt-13-voice-agronomist.md](prompt-13-voice-agronomist.md) | Voice-first AI agronomist assistant (text + voice, read-only) |
 | [prompt-14-farmer-community.md](prompt-14-farmer-community.md) | Farmer community foundation (posts + comments, soft-deleted) |
 | [prompt-15-marketplace-inbox.md](prompt-15-marketplace-inbox.md) | Farmer marketplace + private inbox foundation (listings + conversations, no payments) |
+| [prompt-16-input-calculator.md](prompt-16-input-calculator.md) | Precision crop input & dosage calculator (pure arithmetic, read-only) |
 | [pakistan-admin-data.md](pakistan-admin-data.md) | Pakistan administrative divisions dataset reference |
 
 ## API base
@@ -32,5 +33,5 @@ in the order the features were built.
 - Swagger UI: `http://localhost:5073/swagger`
 - All farm/weather/crop-suitability/crop-recommendation/disease-detection/
   monitoring/notification/financial/financial-health/farm-performance/
-  farm-dashboard/agronomist/community/marketplace endpoints require a JWT
-  bearer token obtained from `POST /api/auth/login`.
+  farm-dashboard/agronomist/community/marketplace/input-calculator endpoints
+  require a JWT bearer token obtained from `POST /api/auth/login`.
