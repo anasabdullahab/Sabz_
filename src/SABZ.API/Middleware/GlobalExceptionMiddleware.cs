@@ -83,6 +83,12 @@ public class GlobalExceptionMiddleware
                 errorResponse = new { message = agronomistException.Message };
                 break;
 
+            case CropPriceProviderException cropPriceException:
+                _logger.LogWarning(cropPriceException, "Crop price provider error.");
+                response.StatusCode = (int)HttpStatusCode.BadGateway;
+                errorResponse = new { message = cropPriceException.Message, code = "CropPriceProviderUnavailable" };
+                break;
+
             default:
                 _logger.LogError(exception, "An unexpected error occurred.");
                 response.StatusCode = (int)HttpStatusCode.InternalServerError;

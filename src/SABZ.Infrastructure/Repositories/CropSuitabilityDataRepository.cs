@@ -29,4 +29,10 @@ public class CropSuitabilityDataRepository : ICropSuitabilityDataRepository
         => await _db.RegionalCropSuitabilities
             .AsNoTracking()
             .ToListAsync(ct);
+
+    public async Task<List<CropCatalog>> GetCatalogAsync(CancellationToken ct = default)
+        => await _db.CropCatalog
+            .AsNoTracking()
+            .OrderBy(c => c.Id)
+            .ToListAsync(ct);
 }

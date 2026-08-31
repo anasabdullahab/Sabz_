@@ -7,6 +7,7 @@ using SABZ.Application.Interfaces;
 using SABZ.Application.Services.Agronomist;
 using SABZ.Application.Services.Auth;
 using SABZ.Application.Services.Community;
+using SABZ.Application.Services.CropPrice;
 using SABZ.Application.Services.Crops;
 using SABZ.Application.Services.CropRecommendation;
 using SABZ.Application.Services.CropSuitability;
@@ -24,6 +25,7 @@ using SABZ.Infrastructure.Persistence;
 using SABZ.Infrastructure.Repositories;
 using SABZ.Infrastructure.Services;
 using SABZ.Infrastructure.Services.Agronomist;
+using SABZ.Infrastructure.Services.CropPrice;
 using SABZ.Infrastructure.Services.DiseaseDetection;
 using SABZ.Infrastructure.Services.Weather;
 
@@ -168,6 +170,16 @@ public static class DependencyInjection
         // farm/crop repositories and JWT ownership pattern; no persistence, no
         // repository, no AI, no background jobs, zero schema impact.
         services.AddScoped<IInputCalculatorService, InputCalculatorService>();
+
+        // Crop price intelligence (Prompt 17) - informational only. AMIS Punjab
+        // has no stable machine-readable endpoint, so the provider is a clearly
+        // labelled NON-LIVE reference dataset (source "SABZ Reference Dataset",
+        // dataStatus "Reference"). The provider is registered behind
+        // ICropPriceProvider so a real AMIS implementation can replace it in DI
+        // later without touching Application/API. No API key, no persistence,
+        // no financial/marketplace/notification interaction, zero schema impact.
+        services.AddScoped<ICropPriceProvider, ReferenceCropPriceProvider>();
+        services.AddScoped<ICropPriceService, CropPriceService>();
 
         return services;
     }

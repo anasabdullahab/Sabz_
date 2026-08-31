@@ -12,4 +12,10 @@ public interface ICropSuitabilityDataRepository
 
     /// <summary>All regional suitability rules, in a single query.</summary>
     Task<List<RegionalCropSuitability>> GetRegionalRulesAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// The shared crop catalog (reference crop names), in a single query.
+    /// Reused for crop-name matching; never duplicated.
+    /// </summary>
+    Task<List<CropCatalog>> GetCatalogAsync(CancellationToken ct = default);
 }
