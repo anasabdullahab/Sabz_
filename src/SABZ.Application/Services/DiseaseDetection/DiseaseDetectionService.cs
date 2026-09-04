@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SABZ.Application.DTOs.DiseaseDetection;
 using SABZ.Application.Interfaces;
+using SABZ.Application.Services.CropKnowledge;
 using SABZ.Domain.Entities;
 using SABZ.Domain.Exceptions;
 
@@ -103,11 +104,13 @@ public class DiseaseDetectionService : IDiseaseDetectionService
         if (!farm.Latitude.HasValue || !farm.Longitude.HasValue)
             response.MissingData.Add("This farm has no GPS coordinates, so weather context was not included in the assessment.");
 
-        // Stage 2 - provider not configured: graceful service-unavailable, never a fake result.
+        // Stage 2 - provider not configured: local reference fallback instead of a
+        // hard error. The farmer gets the crop's common diseases (knowledge base)
+        // with symptoms and curated treatment guidance - clearly marked as NOT an
+        // AI image analysis (IsLocalFallback = true, never a fabricated detection).
         if (!_provider.IsConfigured)
-            throw new DiseaseProviderException(
-                "The AI disease-detection provider is not configured. " +
-                "Set DiseaseDetection:ApiKey in local configuration to enable live analysis.");
+            return await BuildLocalFallbackAsync(response, farm, crop, ct,
+                "The AI disease-detection provider is not configured, so the image could not be AI-analysed.");
 
         // Optional weather context via the existing abstraction (single cached call).
         var weatherHint = await TryGetWeatherContextAsync(userId, farmId, farm, ct);
@@ -115,17 +118,29 @@ public class DiseaseDetectionService : IDiseaseDetectionService
             response.MissingData.Add("Weather data was temporarily unavailable and was not included in the assessment.");
 
         // Stage 3 - exactly one AI call performs relevance + disease assessment.
-        var result = await _provider.DetectAsync(new PlantDiseaseDetectionRequest
+        PlantDiseaseDetectionResult result;
+        try
         {
-            ImageBytes = imageBytes,
-            ImageMimeType = contentType ?? "application/octet-stream",
-            CropNameHint = crop?.CropName ?? crop?.CropCatalog?.Name,
-            CropCategoryHint = crop?.CropCatalog?.Category,
-            SeasonHint = crop?.Season,
-            GrowthStageHint = crop?.GrowthStage,
-            WeatherContextHint = weatherHint,
-            FarmerNotes = notes
-        }, ct);
+            result = await _provider.DetectAsync(new PlantDiseaseDetectionRequest
+            {
+                ImageBytes = imageBytes,
+                ImageMimeType = contentType ?? "application/octet-stream",
+                CropNameHint = crop?.CropName ?? crop?.CropCatalog?.Name,
+                CropCategoryHint = crop?.CropCatalog?.Category,
+                SeasonHint = crop?.Season,
+                GrowthStageHint = crop?.GrowthStage,
+                WeatherContextHint = weatherHint,
+                FarmerNotes = notes
+            }, ct);
+        }
+        catch (DiseaseProviderException ex)
+        {
+            // Provider timed out / unreachable / rate-limited: fall back to the local
+            // knowledge base instead of failing the whole request.
+            _logger.LogWarning(ex, "Disease detection provider failed for farm {FarmId}; using local fallback.", farmId);
+            return await BuildLocalFallbackAsync(response, farm, crop, ct,
+                "The AI service was unavailable, so the image could not be AI-analysed.");
+        }
 
         // Stage 4 - plant/leaf relevance gate: no disease classification on unrelated images.
         response.ImageAssessment.IsPlantImage = result.IsPlantImage;
@@ -146,6 +161,102 @@ public class DiseaseDetectionService : IDiseaseDetectionService
         response.Advice = await BuildAdviceAsync(result, response.DiseaseAssessment, crop, weatherHint, response.MissingData, ct);
 
         return response;
+    }
+
+    // ------------------------------------------------------------------
+    //  Local fallback (AI unavailable) - knowledge-base reference mode
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Builds a local-reference response when the AI provider cannot be used:
+    /// the image itself is never analysed (honestly stated), but the farmer
+    /// receives the crop's common diseases from the local knowledge base with
+    /// symptoms to compare visually and curated treatment/prevention guidance.
+    /// </summary>
+    private async Task<DiseaseDetectionResponseDto> BuildLocalFallbackAsync(
+        DiseaseDetectionResponseDto response,
+        Farm farm,
+        Crop? crop,
+        CancellationToken ct,
+        string reason)
+    {
+        response.IsLocalFallback = true;
+        response.ImageAssessment.ImageAccepted = true;
+        response.ImageAssessment.IsPlantImage = false; // unverifiable without AI - never claimed
+        response.ImageAssessment.Message =
+            "Local reference mode: your photo was received, but AI image analysis is currently unavailable. " +
+            "Compare your crop against the common diseases listed below and retry AI analysis later.";
+
+        var cropName = crop?.CropCatalog?.Name ?? crop?.CropName;
+        var kbEntry = cropName is null ? null : CropKnowledgeBase.Find(cropName);
+
+        var assessment = new DiseaseAssessmentDto
+        {
+            Detected = false,
+            AssessmentLevel = "LocalReference",
+            AssessmentSource = "Local crop knowledge base",
+            Crop = cropName,
+            Confidence = null,
+            Explanation = reason +
+                (kbEntry is null
+                    ? " No crop context was provided, so general monitoring guidance is shown below."
+                    : $" Common {kbEntry.Name} diseases are listed below - compare your plant's symptoms with each one.")
+        };
+
+        // Curated guidance for the crop (includes general entries).
+        var curated = await _diseaseInformation.GetActiveForCropAsync(crop?.CropCatalogId, ct);
+
+        if (kbEntry is not null)
+        {
+            assessment.CommonDiseasesForCrop.AddRange(kbEntry.CommonDiseases);
+        }
+
+        response.DiseaseAssessment = assessment;
+        response.Advice = BuildLocalAdvice(kbEntry, curated);
+        return response;
+    }
+
+    private static DiseaseAdviceDto BuildLocalAdvice(
+        CropKnowledgeEntry? kbEntry,
+        List<DiseaseInformation> curated)
+    {
+        var advice = new DiseaseAdviceDto();
+        advice.AdviceSources.Add("Local crop knowledge base");
+
+        advice.Summary = kbEntry is null
+            ? "AI analysis is unavailable right now. Inspect your crop leaves for spots, yellowing, wilting or insects, " +
+              "and retry the Disease Camera later for an AI assessment."
+            : $"AI analysis is unavailable right now. Common diseases in {kbEntry.Name} ({kbEntry.NameUrdu}) are: " +
+              $"{string.Join(", ", kbEntry.CommonDiseases)}. Check your plant's leaves against the symptoms below.";
+
+        advice.RecommendedActions.Add(
+            "Inspect the underside of leaves and stems in daylight - most diseases show as spots, powdery patches, yellowing, curling or wilting.");
+        advice.RecommendedActions.Add(
+            "Retry the AI Disease Camera later - it becomes available once the AI service is reachable again.");
+
+        // Symptom + treatment reference for each common disease with curated guidance.
+        foreach (var info in curated.Where(d => !string.IsNullOrWhiteSpace(d.Symptoms)).Take(5))
+        {
+            advice.Monitoring.Add($"{info.DiseaseName}: {info.Symptoms}");
+            foreach (var action in SplitList(info.RecommendedActions).Take(2))
+                advice.RecommendedActions.Add($"{info.DiseaseName}: {action}");
+            foreach (var prevention in SplitList(info.Prevention).Take(1))
+                advice.Prevention.Add($"{info.DiseaseName}: {prevention}");
+        }
+
+        if (advice.Monitoring.Count == 0)
+            advice.Monitoring.Add("Inspect the crop every 2-3 days and note whether symptoms spread to neighbouring plants.");
+
+        if (advice.Prevention.Count == 0)
+        {
+            advice.Prevention.Add("Avoid overhead watering late in the day so leaves dry quickly.");
+            advice.Prevention.Add("Remove and destroy severely affected plant parts away from the field.");
+        }
+
+        advice.RecommendedActions.Add(
+            "For any pesticide or treatment, follow an approved product label or a local agricultural expert - SABZ does not prescribe dosages.");
+
+        return advice;
     }
 
     // ------------------------------------------------------------------
@@ -208,7 +319,7 @@ public class DiseaseDetectionService : IDiseaseDetectionService
 
         try
         {
-            var response = await _weatherService.GetForecastAsync(userId, farmId, ct);
+            var response = await _weatherService.GetForecastAsync(userId, farmId, ct: ct);
             var days = response.Forecast?.Days;
             if (days is null || days.Count == 0)
                 return null;

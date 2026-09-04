@@ -13,6 +13,12 @@ public class AgronomistResponseDto
     /// <summary>The AI-generated agronomy answer (informational only).</summary>
     public string Answer { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Where the answer came from: "AiProvider" (DashScope) or
+    /// "LocalKnowledgeBase" (offline keyword fallback).
+    /// </summary>
+    public string AnswerSource { get; set; } = "AiProvider";
+
     /// <summary>Detected/responded language code ("en" or "ur").</summary>
     public string Language { get; set; } = "en";
 

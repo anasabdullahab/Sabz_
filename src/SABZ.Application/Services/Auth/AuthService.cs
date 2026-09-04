@@ -64,6 +64,7 @@ public class AuthService : IAuthService
         {
             Success = true,
             Message = "Registration successful.",
+            Token = _tokenService.GenerateToken(user),
             User = MapToUserResponse(user)
         };
     }

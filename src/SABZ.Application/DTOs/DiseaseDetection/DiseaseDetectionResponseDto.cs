@@ -23,6 +23,14 @@ public class DiseaseDetectionResponseDto
 
     public List<string> MissingData { get; set; } = new();
 
+    /// <summary>
+    /// True when the AI provider was unavailable (no key / timeout / error) and the
+    /// response was built from the local crop knowledge base instead: the farmer
+    /// gets the crop's common diseases with symptoms and treatment guidance to
+    /// compare visually, clearly marked as NOT an AI image analysis.
+    /// </summary>
+    public bool IsLocalFallback { get; set; }
+
     public DiseaseProviderInfoDto Provider { get; set; } = new();
 
     public DateTime EvaluatedAt { get; set; }
@@ -80,6 +88,13 @@ public class DiseaseAssessmentDto
 
     /// <summary>Always "AI model" for provider output.</summary>
     public string AssessmentSource { get; set; } = "AI model";
+
+    /// <summary>
+    /// Common diseases of the assessed crop from the local knowledge base,
+    /// populated in local fallback mode (AI unavailable) for visual comparison.
+    /// Empty in normal AI mode.
+    /// </summary>
+    public List<string> CommonDiseasesForCrop { get; set; } = new();
 }
 
 /// <summary>Agricultural guidance combining AI output with SABZ curated reference data.</summary>

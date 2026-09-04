@@ -36,7 +36,14 @@ public class LocationRepository : ILocationRepository
         return await _context.Tehsils
             .Where(t => t.DistrictId == districtId)
             .OrderBy(t => t.Name)
-            .Select(t => new LocationDto { Id = t.Id, Name = t.Name, NameUrdu = t.NameUrdu })
+            .Select(t => new LocationDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                NameUrdu = t.NameUrdu,
+                Latitude = t.Latitude.HasValue ? (double?)t.Latitude.Value : null,
+                Longitude = t.Longitude.HasValue ? (double?)t.Longitude.Value : null,
+            })
             .ToListAsync();
     }
 
@@ -53,5 +60,20 @@ public class LocationRepository : ILocationRepository
     public async Task<bool> TehsilExistsAndBelongsToDistrictAsync(int tehsilId, int districtId)
     {
         return await _context.Tehsils.AnyAsync(t => t.Id == tehsilId && t.DistrictId == districtId);
+    }
+
+    public async Task<LocationDto?> GetTehsilByIdAsync(int tehsilId)
+    {
+        return await _context.Tehsils
+            .Where(t => t.Id == tehsilId)
+            .Select(t => new LocationDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                NameUrdu = t.NameUrdu,
+                Latitude = t.Latitude.HasValue ? (double?)t.Latitude.Value : null,
+                Longitude = t.Longitude.HasValue ? (double?)t.Longitude.Value : null,
+            })
+            .FirstOrDefaultAsync();
     }
 }

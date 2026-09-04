@@ -9,11 +9,10 @@ using SABZ.Application.Services.Auth;
 using SABZ.Application.Services.Community;
 using SABZ.Application.Services.CropPrice;
 using SABZ.Application.Services.Crops;
-using SABZ.Application.Services.CropRecommendation;
-using SABZ.Application.Services.CropSuitability;
 using SABZ.Application.Services.Dashboard;
 using SABZ.Application.Services.DiseaseDetection;
 using SABZ.Application.Services.Farms;
+using SABZ.Application.Services.FertilizerCalculator;
 using SABZ.Application.Services.Financial;
 using SABZ.Application.Services.InputCalculator;
 using SABZ.Application.Services.Marketplace;
@@ -53,6 +52,7 @@ public static class DependencyInjection
 
         // Crops
         services.AddScoped<ICropRepository, CropRepository>();
+        services.AddScoped<ICropCatalogRepository, CropCatalogRepository>();
         services.AddScoped<ICropService, CropService>();
 
         // Crop monitoring (Prompt 7) - rules, scheduled checks, centralised UTC clock
@@ -103,16 +103,6 @@ public static class DependencyInjection
         // Weather - provider implemented in Infrastructure, service implemented in Application
         services.AddScoped<IWeatherProvider, OpenMeteoWeatherProvider>();
         services.AddScoped<IWeatherService, WeatherService>();
-
-        // Crop suitability - configuration, data repository and scoring service
-        services.Configure<CropSuitabilitySettings>(configuration.GetSection(CropSuitabilitySettings.SectionName));
-        services.AddScoped<ICropSuitabilityDataRepository, CropSuitabilityDataRepository>();
-        services.AddScoped<ICropSuitabilityService, CropSuitabilityService>();
-
-        // Crop recommendation (Prompt 5) - reuses suitability + weather, adds crop-history guidance
-        services.Configure<CropRecommendationSettings>(configuration.GetSection(CropRecommendationSettings.SectionName));
-        services.AddScoped<ICropChangeRuleRepository, CropChangeRuleRepository>();
-        services.AddScoped<ICropRecommendationService, CropRecommendationService>();
 
         // Disease detection (Prompt 6) - image validation, AI vision provider, curated advice
         services.Configure<DiseaseDetectionSettings>(configuration.GetSection(DiseaseDetectionSettings.SectionName));
@@ -170,6 +160,15 @@ public static class DependencyInjection
         // farm/crop repositories and JWT ownership pattern; no persistence, no
         // repository, no AI, no background jobs, zero schema impact.
         services.AddScoped<IInputCalculatorService, InputCalculatorService>();
+
+        // Automated fertilizer presets (hackathon feature) - crop name + acres
+        // in, exact bag counts out. Pure local arithmetic over the embedded
+        // crop knowledge base; no AI, no external calls, no persistence.
+        services.AddSingleton<FertilizerCalculatorService>();
+
+        // Smart weather action alerts (hackathon feature) - rule-based alerts
+        // derived from the existing Open-Meteo forecast + crop growth stages.
+        services.AddScoped<IWeatherAlertService, WeatherAlertService>();
 
         // Crop price intelligence (Prompt 17) - informational only. AMIS Punjab
         // has no stable machine-readable endpoint, so the provider is a clearly

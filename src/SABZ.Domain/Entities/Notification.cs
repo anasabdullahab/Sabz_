@@ -42,4 +42,5 @@ public static class ReferenceTypes
 {
     public const string None = "None";
     public const string CropMonitoringCheck = "CropMonitoringCheck";
+    public const string Crop = "Crop";
 }

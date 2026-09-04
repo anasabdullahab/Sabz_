@@ -1,0 +1,212 @@
+{
+  "crops": [
+    {
+      "name": "Wheat",
+      "nameUrdu": "گندم",
+      "scientificName": "Triticum aestivum",
+      "category": "Cereal",
+      "season": "Rabi",
+      "maturityDays": 140,
+      "sowingWindow": { "startMonth": 10, "endMonth": 12 },
+      "suitableSoil": ["Loam", "Clay Loam", "Silt Loam"],
+      "nitrogenImpact": "Consumes",
+      "stageTimeline": {
+        "germination": { "startDay": 0, "endDay": 15 },
+        "vegetative": { "startDay": 16, "endDay": 60 },
+        "flowering": { "startDay": 61, "endDay": 95 },
+        "maturity": { "startDay": 96, "endDay": 140 }
+      },
+      "waterRequirement": "Medium",
+      "temperatureRange": { "minC": 10, "maxC": 25 },
+      "fertilizerPlan": {
+        "sowing": { "dap": 1.0, "ssp": 0.0, "urea": 0.5 },
+        "firstIrrigation": { "urea": 0.5 },
+        "secondIrrigation": { "urea": 0.5 }
+      },
+      "commonDiseases": ["Wheat Leaf Rust", "Wheat Smut", "Wheat Aphid"]
+    },
+    {
+      "name": "Rice",
+      "nameUrdu": "چاول",
+      "scientificName": "Oryza sativa",
+      "category": "Cereal",
+      "season": "Kharif",
+      "maturityDays": 120,
+      "sowingWindow": { "startMonth": 5, "endMonth": 7 },
+      "suitableSoil": ["Clay", "Clay Loam", "Silt"],
+      "nitrogenImpact": "Consumes",
+      "stageTimeline": {
+        "germination": { "startDay": 0, "endDay": 20 },
+        "vegetative": { "startDay": 21, "endDay": 70 },
+        "flowering": { "startDay": 71, "endDay": 95 },
+        "maturity": { "startDay": 96, "endDay": 120 }
+      },
+      "waterRequirement": "High",
+      "temperatureRange": { "minC": 20, "maxC": 37 },
+      "fertilizerPlan": {
+        "sowing": { "dap": 1.0, "ssp": 0.0, "urea": 0.5 },
+        "firstIrrigation": { "urea": 0.5 },
+        "secondIrrigation": { "urea": 0.5 }
+      },
+      "commonDiseases": ["Rice Blast", "Brown Spot", "Bacterial Leaf Blight"]
+    },
+    {
+      "name": "Cotton",
+      "nameUrdu": "کپاس",
+      "scientificName": "Gossypium hirsutum",
+      "category": "Cash Crop",
+      "season": "Kharif",
+      "maturityDays": 160,
+      "sowingWindow": { "startMonth": 4, "endMonth": 6 },
+      "suitableSoil": ["Loam", "Sandy Loam", "Clay Loam"],
+      "nitrogenImpact": "Consumes",
+      "stageTimeline": {
+        "germination": { "startDay": 0, "endDay": 12 },
+        "vegetative": { "startDay": 13, "endDay": 75 },
+        "flowering": { "startDay": 76, "endDay": 115 },
+        "maturity": { "startDay": 116, "endDay": 160 }
+      },
+      "waterRequirement": "Medium",
+      "temperatureRange": { "minC": 21, "maxC": 35 },
+      "fertilizerPlan": {
+        "sowing": { "dap": 1.0, "ssp": 0.0, "urea": 0.0 },
+        "firstIrrigation": { "urea": 0.5 },
+        "secondIrrigation": { "urea": 0.5 }
+      },
+      "commonDiseases": ["Cotton Leaf Curl Virus", "Boll Rot", "Aphid Infestation"]
+    },
+    {
+      "name": "Sugarcane",
+      "nameUrdu": "گنا",
+      "scientificName": "Saccharum officinarum",
+      "category": "Cash Crop",
+      "season": "Kharif",
+      "maturityDays": 300,
+      "sowingWindow": { "startMonth": 2, "endMonth": 4 },
+      "suitableSoil": ["Loam", "Clay Loam", "Silt Loam"],
+      "nitrogenImpact": "Consumes",
+      "stageTimeline": {
+        "germination": { "startDay": 0, "endDay": 30 },
+        "vegetative": { "startDay": 31, "endDay": 180 },
+        "flowering": { "startDay": 181, "endDay": 240 },
+        "maturity": { "startDay": 241, "endDay": 300 }
+      },
+      "waterRequirement": "High",
+      "temperatureRange": { "minC": 20, "maxC": 38 },
+      "fertilizerPlan": {
+        "sowing": { "dap": 1.0, "ssp": 0.5, "urea": 0.5 },
+        "firstIrrigation": { "urea": 0.5 },
+        "secondIrrigation": { "urea": 0.5 }
+      },
+      "commonDiseases": ["Red Rot", "Smut", "Pyrilla"]
+    },
+    {
+      "name": "Maize",
+      "nameUrdu": "مکئی",
+      "scientificName": "Zea mays",
+      "category": "Cereal",
+      "season": "Kharif",
+      "maturityDays": 100,
+      "sowingWindow": { "startMonth": 6, "endMonth": 8 },
+      "suitableSoil": ["Loam", "Silt Loam", "Sandy Loam"],
+      "nitrogenImpact": "Consumes",
+      "stageTimeline": {
+        "germination": { "startDay": 0, "endDay": 10 },
+        "vegetative": { "startDay": 11, "endDay": 50 },
+        "flowering": { "startDay": 51, "endDay": 70 },
+        "maturity": { "startDay": 71, "endDay": 100 }
+      },
+      "waterRequirement": "Medium",
+      "temperatureRange": { "minC": 18, "maxC": 33 },
+      "fertilizerPlan": {
+        "sowing": { "dap": 1.0, "ssp": 0.0, "urea": 0.5 },
+        "firstIrrigation": { "urea": 0.5 },
+        "secondIrrigation": { "urea": 0.0 }
+      },
+      "commonDiseases": ["Corn Leaf Blight", "Stalk Rot", "Fall Armyworm"]
+    },
+    {
+      "name": "Mung Bean",
+      "nameUrdu": "مونگ",
+      "scientificName": "Vigna radiata",
+      "category": "Pulse",
+      "season": "Kharif",
+      "maturityDays": 70,
+      "sowingWindow": { "startMonth": 6, "endMonth": 8 },
+      "suitableSoil": ["Loam", "Sandy Loam", "Silt Loam"],
+      "nitrogenImpact": "Fixes",
+      "stageTimeline": {
+        "germination": { "startDay": 0, "endDay": 8 },
+        "vegetative": { "startDay": 9, "endDay": 35 },
+        "flowering": { "startDay": 36, "endDay": 50 },
+        "maturity": { "startDay": 51, "endDay": 70 }
+      },
+      "waterRequirement": "Low",
+      "temperatureRange": { "minC": 22, "maxC": 35 },
+      "fertilizerPlan": {
+        "sowing": { "dap": 0.5, "ssp": 0.0, "urea": 0.0 },
+        "firstIrrigation": { "urea": 0.0 },
+        "secondIrrigation": { "urea": 0.0 }
+      },
+      "commonDiseases": ["Mungbean Yellow Mosaic Virus", "Powdery Mildew", "Cercospora Leaf Spot"]
+    },
+    {
+      "name": "Chickpea",
+      "nameUrdu": "چنا",
+      "scientificName": "Cicer arietinum",
+      "category": "Pulse",
+      "season": "Rabi",
+      "maturityDays": 110,
+      "sowingWindow": { "startMonth": 10, "endMonth": 11 },
+      "suitableSoil": ["Loam", "Sandy Loam", "Clay Loam"],
+      "nitrogenImpact": "Fixes",
+      "stageTimeline": {
+        "germination": { "startDay": 0, "endDay": 12 },
+        "vegetative": { "startDay": 13, "endDay": 55 },
+        "flowering": { "startDay": 56, "endDay": 80 },
+        "maturity": { "startDay": 81, "endDay": 110 }
+      },
+      "waterRequirement": "Low",
+      "temperatureRange": { "minC": 15, "maxC": 30 },
+      "fertilizerPlan": {
+        "sowing": { "dap": 0.5, "ssp": 0.0, "urea": 0.0 },
+        "firstIrrigation": { "urea": 0.0 },
+        "secondIrrigation": { "urea": 0.0 }
+      },
+      "commonDiseases": ["Ascochyta Blight", "Fusarium Wilt", "Pod Borer"]
+    },
+    {
+      "name": "Potato",
+      "nameUrdu": "آلو",
+      "scientificName": "Solanum tuberosum",
+      "category": "Vegetable",
+      "season": "Rabi",
+      "maturityDays": 100,
+      "sowingWindow": { "startMonth": 10, "endMonth": 1 },
+      "suitableSoil": ["Sandy Loam", "Loam", "Silt Loam"],
+      "nitrogenImpact": "Consumes",
+      "stageTimeline": {
+        "germination": { "startDay": 0, "endDay": 15 },
+        "vegetative": { "startDay": 16, "endDay": 55 },
+        "flowering": { "startDay": 56, "endDay": 75 },
+        "maturity": { "startDay": 76, "endDay": 100 }
+      },
+      "waterRequirement": "Medium",
+      "temperatureRange": { "minC": 10, "maxC": 25 },
+      "fertilizerPlan": {
+        "sowing": { "dap": 1.0, "ssp": 0.5, "urea": 0.5 },
+        "firstIrrigation": { "urea": 0.5 },
+        "secondIrrigation": { "urea": 0.0 }
+      },
+      "commonDiseases": ["Potato Late Blight", "Early Blight", "Potato Virus Y"]
+    }
+  ],
+  "fertilizerPresets": {
+    "bagWeights": {
+      "DAP": 50,
+      "SSP": 50,
+      "Urea": 50
+    },
+    "notes": "Bag counts are per acre standard recommendations. DAP/SSP applied at sowing, Urea split across irrigation cycles. Always verify with soil test results."
+  }
+}

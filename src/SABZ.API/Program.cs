@@ -95,6 +95,9 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     await LocationDataSeeder.SeedAsync(db, logger);
+    // Backfill crop catalog links, regenerate monitoring checks/notifications
+    // and seed demo community content (idempotent, failure never blocks startup).
+    await DemoDataSeeder.SeedAsync(db, scope.ServiceProvider, logger);
 }
 
 // Use global exception middleware

@@ -2,8 +2,11 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SABZ.Application.DTOs.FertilizerCalculator;
 using SABZ.Application.DTOs.InputCalculator;
 using SABZ.Application.Interfaces;
+using SABZ.Application.Services.CropKnowledge;
+using SABZ.Application.Services.FertilizerCalculator;
 using DomainValidationException = SABZ.Domain.Exceptions.ValidationException;
 
 namespace SABZ.API.Controllers;
@@ -23,10 +26,12 @@ namespace SABZ.API.Controllers;
 public class InputCalculatorController : ControllerBase
 {
     private readonly IInputCalculatorService _inputCalculatorService;
+    private readonly FertilizerCalculatorService _fertilizerCalculatorService;
 
-    public InputCalculatorController(IInputCalculatorService inputCalculatorService)
+    public InputCalculatorController(IInputCalculatorService inputCalculatorService, FertilizerCalculatorService fertilizerCalculatorService)
     {
         _inputCalculatorService = inputCalculatorService;
+        _fertilizerCalculatorService = fertilizerCalculatorService;
     }
 
     /// <summary>
@@ -44,6 +49,51 @@ public class InputCalculatorController : ControllerBase
         var userId = GetCurrentUserId();
         var result = await _inputCalculatorService.CalculateAsync(userId, farmId, dto, ct);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Automated fertilizer presets: crop name + farm size (acres) in, exact
+    /// bag counts and application schedule out. Powered by the local crop
+    /// knowledge base - no AI, no external calls.
+    /// </summary>
+    [HttpPost("api/fertilizer-calculator")]
+    public IActionResult CalculateFertilizer([FromBody] FertilizerCalculatorRequestDto dto)
+    {
+        var errors = ValidateModel(dto);
+        if (errors.Count > 0)
+            throw new DomainValidationException(errors);
+
+        return Ok(_fertilizerCalculatorService.Calculate(dto));
+    }
+
+    /// <summary>
+    /// Returns the local crop knowledge base catalogue (names, seasons,
+    /// maturity days, stage timeline, soil suitability) for searchable crop
+    /// dropdowns, harvest-window estimation and stage progress bars.
+    /// </summary>
+    [HttpGet("api/crop-knowledge")]
+    [AllowAnonymous]
+    public IActionResult GetCropKnowledge()
+    {
+        var crops = CropKnowledgeBase.Entries.Select(e => new
+        {
+            e.Name,
+            e.NameUrdu,
+            e.Category,
+            e.Season,
+            e.MaturityDays,
+            e.SuitableSoil,
+            e.NitrogenImpact,
+            e.WaterRequirement,
+            StageTimeline = new
+            {
+                Germination = new[] { e.StageTimeline.Germination.StartDay, e.StageTimeline.Germination.EndDay },
+                Vegetative = new[] { e.StageTimeline.Vegetative.StartDay, e.StageTimeline.Vegetative.EndDay },
+                Flowering = new[] { e.StageTimeline.Flowering.StartDay, e.StageTimeline.Flowering.EndDay },
+                Maturity = new[] { e.StageTimeline.Maturity.StartDay, e.StageTimeline.Maturity.EndDay },
+            },
+        });
+        return Ok(crops);
     }
 
     private Guid GetCurrentUserId()

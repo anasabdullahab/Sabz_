@@ -17,6 +17,14 @@ public sealed class AgronomistSettings
     /// <summary>Text-generation (chat) model used for agronomy answers.</summary>
     public string ChatModel { get; set; } = "qwen-plus";
 
+    /// <summary>
+    /// Per-request timeout (seconds) for chat completions. Kept shorter than the
+    /// shared connection timeout so an unresponsive AI fails fast and the service
+    /// can fall back to the local knowledge base instead of leaving the farmer
+    /// waiting on "Could not get a response" errors.
+    /// </summary>
+    public int ChatTimeoutSeconds { get; set; } = 30;
+
     /// <summary>Audio-understanding model used for speech-to-text transcription.</summary>
     public string SpeechToTextModel { get; set; } = "qwen2-audio-instruct";
 

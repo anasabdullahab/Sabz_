@@ -13,6 +13,7 @@ public class CropService : ICropService
     private readonly ICropMonitoringRuleRepository _monitoringRuleRepository;
     private readonly ICropMonitoringCheckRepository _monitoringCheckRepository;
     private readonly IFinancialTransactionRepository _financialTransactionRepository;
+    private readonly INotificationService _notificationService;
     private readonly ISystemClock _clock;
     private readonly ILogger<CropService> _logger;
 
@@ -37,6 +38,7 @@ public class CropService : ICropService
         ICropMonitoringRuleRepository monitoringRuleRepository,
         ICropMonitoringCheckRepository monitoringCheckRepository,
         IFinancialTransactionRepository financialTransactionRepository,
+        INotificationService notificationService,
         ISystemClock clock,
         ILogger<CropService> logger)
     {
@@ -45,6 +47,7 @@ public class CropService : ICropService
         _monitoringRuleRepository = monitoringRuleRepository;
         _monitoringCheckRepository = monitoringCheckRepository;
         _financialTransactionRepository = financialTransactionRepository;
+        _notificationService = notificationService;
         _clock = clock;
         _logger = logger;
     }
@@ -64,11 +67,16 @@ public class CropService : ICropService
         var status = string.IsNullOrWhiteSpace(dto.Status) ? "Active" : dto.Status;
         ValidateStatus(status);
 
+        // Link the crop to the catalog by name when the client omits the id so
+        // monitoring rules (keyed by CropCatalogId) can match. Unknown names
+        // simply stay unlinked - custom crops are still supported.
+        var catalogId = dto.CropCatalogId ?? await _cropRepository.FindCatalogIdByNameAsync(dto.CropName);
+
         var crop = new Crop
         {
             Id = Guid.NewGuid(),
             FarmId = farmId,
-            CropCatalogId = dto.CropCatalogId,
+            CropCatalogId = catalogId,
             CropName = dto.CropName,
             Season = dto.Season,
             PlantingDate = dto.PlantingDate,
@@ -85,6 +93,11 @@ public class CropService : ICropService
         // Prompt 7: schedule monitoring checks for crops with a planting date.
         // Degrades gracefully - crop creation must never fail because of monitoring.
         await TryGenerateMonitoringChecksAsync(crop);
+
+        // Prompt 8: when some of the newly generated checks are already due
+        // (past planting date), create their notifications immediately instead
+        // of waiting for the next monitoring read.
+        await TryGenerateDueNotificationsAsync(crop.Id);
 
         return MapToResponse(crop);
     }
@@ -135,6 +148,29 @@ public class CropService : ICropService
         }
     }
 
+    /// <summary>
+    /// Idempotent notification pass for one crop's checks: loads the checks with
+    /// ownership context and hands the already-due ones to the notification
+    /// service. Failures are swallowed - crop creation must never break.
+    /// </summary>
+    private async Task TryGenerateDueNotificationsAsync(Guid cropId)
+    {
+        try
+        {
+            var checks = await _monitoringCheckRepository.GetByCropIdAsync(cropId);
+            var now = _clock.UtcNow;
+            var due = checks
+                .Where(c => c.Status == MonitoringCheckStatus.Scheduled && c.ScheduledDate <= now)
+                .ToList();
+            if (due.Count > 0)
+                await _notificationService.EnsureDueNotificationsAsync(due);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Due-notification generation skipped for crop {CropId}.", cropId);
+        }
+    }
+
     public async Task<List<CropResponseDto>> GetCropsByFarmAsync(Guid userId, Guid farmId)
     {
         var farm = await _farmRepository.GetByIdAsync(farmId)
@@ -174,7 +210,7 @@ public class CropService : ICropService
         ValidateStatus(status);
 
         crop.CropName = dto.CropName;
-        crop.CropCatalogId = dto.CropCatalogId;
+        crop.CropCatalogId = dto.CropCatalogId ?? await _cropRepository.FindCatalogIdByNameAsync(dto.CropName);
         crop.Season = dto.Season;
         crop.PlantingDate = dto.PlantingDate;
         crop.HarvestDate = dto.HarvestDate;

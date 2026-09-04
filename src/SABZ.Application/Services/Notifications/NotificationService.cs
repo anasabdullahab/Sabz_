@@ -27,15 +27,18 @@ public class NotificationService : INotificationService
     private const int MaxTake = 100;
 
     private readonly INotificationRepository _notificationRepository;
+    private readonly ICropMonitoringCheckRepository _checkRepository;
     private readonly ISystemClock _clock;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
         INotificationRepository notificationRepository,
+        ICropMonitoringCheckRepository checkRepository,
         ISystemClock clock,
         ILogger<NotificationService> logger)
     {
         _notificationRepository = notificationRepository;
+        _checkRepository = checkRepository;
         _clock = clock;
         _logger = logger;
     }
@@ -49,6 +52,11 @@ public class NotificationService : INotificationService
         if (take is <= 0)
             throw new ValidationException("take must be a positive number.");
 
+        // Lazy due-notification generation on the read path (same pattern as
+        // the monitoring read path): the bell and the notifications page must
+        // show reminders even if the farmer never opens the monitoring page.
+        await EnsureDueNotificationsForUserAsync(userId, ct);
+
         var limit = Math.Min(take ?? DefaultTake, MaxTake);
         var notifications = await _notificationRepository.GetByUserIdAsync(userId, limit, ct);
         return notifications.Select(MapToDto).ToList();
@@ -56,12 +64,18 @@ public class NotificationService : INotificationService
 
     public async Task<List<NotificationDto>> GetUnreadAsync(Guid userId, CancellationToken ct = default)
     {
+        await EnsureDueNotificationsForUserAsync(userId, ct);
+
         var notifications = await _notificationRepository.GetUnreadByUserIdAsync(userId, ct);
         return notifications.Select(MapToDto).ToList();
     }
 
     public async Task<int> GetUnreadCountAsync(Guid userId, CancellationToken ct = default)
-        => await _notificationRepository.CountUnreadAsync(userId, ct);
+    {
+        await EnsureDueNotificationsForUserAsync(userId, ct);
+
+        return await _notificationRepository.CountUnreadAsync(userId, ct);
+    }
 
     public async Task<NotificationDto> MarkReadAsync(Guid userId, Guid notificationId, CancellationToken ct = default)
     {
@@ -152,6 +166,83 @@ public class NotificationService : INotificationService
         }
 
         return created;
+    }
+
+    /// <summary>
+    /// Lazy, failure-tolerant due-notification generation for one user's read:
+    /// loads their checks (with ownership context), hands the already-due
+    /// scheduled ones to <see cref="EnsureDueNotificationsAsync"/> and swallows
+    /// every error - notification generation must never break a read.
+    /// </summary>
+    private async Task EnsureDueNotificationsForUserAsync(Guid userId, CancellationToken ct)
+    {
+        try
+        {
+            var now = _clock.UtcNow;
+            var checks = await _checkRepository.GetByUserIdAsync(userId, ct);
+            var due = checks
+                .Where(c => c.Status == MonitoringCheckStatus.Scheduled && c.ScheduledDate <= now)
+                .ToList();
+            if (due.Count > 0)
+                await EnsureDueNotificationsAsync(due, ct);
+
+            await EnsurePlanNotificationsAsync(userId, checks, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Due-notification generation failed for user {UserId} during notification read.", userId);
+        }
+    }
+
+    /// <summary>
+    /// One "your crop is being monitored" notification per crop that has checks,
+    /// created lazily on the read path (idempotent via the unique index on
+    /// UserId + ReferenceType + ReferenceId + Category). Without this a freshly
+    /// planted crop stays silent in the bell until its first check becomes due,
+    /// which reads as a broken feed ("crops added but notifications empty").
+    /// </summary>
+    private async Task EnsurePlanNotificationsAsync(Guid userId, List<CropMonitoringCheck> checks, CancellationToken ct)
+    {
+        var cropsWithChecks = checks
+            .Where(c => c.Crop is not null)
+            .GroupBy(c => c.CropId)
+            .ToList();
+        if (cropsWithChecks.Count == 0)
+            return;
+
+        var announcedCropIds = await _notificationRepository.GetExistingReferenceIdsAsync(
+            userId, ReferenceTypes.Crop, NotificationCategories.MonitoringPlan, ct);
+
+        foreach (var group in cropsWithChecks)
+        {
+            var crop = group.First().Crop!;
+            if (announcedCropIds.Contains(crop.Id))
+                continue; // at most one MonitoringPlan notification per crop
+
+            var ordered = group.OrderBy(c => c.ScheduledDate).ToList();
+            var first = ordered[0];
+            var message =
+                $"\"{crop.CropName}\" is now monitored with {ordered.Count} scheduled checks. " +
+                $"First check: \"{first.Title}\" on {first.ScheduledDate:dd MMM yyyy}. Open Crop Monitoring for the full plan.";
+
+            await _notificationRepository.AddAsync(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Title = "Crop monitoring active",
+                Message = message.Length <= 1000 ? message : message[..997] + "...",
+                Category = NotificationCategories.MonitoringPlan,
+                ReferenceType = ReferenceTypes.Crop,
+                ReferenceId = crop.Id,
+                IsRead = false,
+                CreatedAt = _clock.UtcNow
+            }, ct);
+
+            // Same guarded save as the due path: a concurrent insert losing the
+            // unique-index race is detached instead of surfacing an error.
+            if (await _notificationRepository.SaveChangesGuardedAsync(ct))
+                announcedCropIds.Add(crop.Id);
+        }
     }
 
     private static string BuildDueMessage(CropMonitoringCheck check)

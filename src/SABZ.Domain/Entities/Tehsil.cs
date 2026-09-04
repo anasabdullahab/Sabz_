@@ -6,6 +6,8 @@ public class Tehsil
     public int DistrictId { get; set; }
     public required string Name { get; set; }
     public string? NameUrdu { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
 
     public District District { get; set; } = null!;
 }

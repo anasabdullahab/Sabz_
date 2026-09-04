@@ -213,7 +213,7 @@ public class FarmDashboardService : IFarmDashboardService
         {
             try
             {
-                var weather = await _weatherService.GetCurrentWeatherAsync(userId, farm.Id, ct);
+                var weather = await _weatherService.GetCurrentWeatherAsync(userId, farm.Id, ct: ct);
                 weatherSection = new DashboardWeatherSectionDto
                 {
                     Source = weather.Source,

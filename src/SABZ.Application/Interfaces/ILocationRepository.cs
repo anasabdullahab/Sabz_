@@ -10,4 +10,6 @@ public interface ILocationRepository
     Task<bool> ProvinceExistsAsync(int provinceId);
     Task<bool> DistrictExistsAndBelongsToProvinceAsync(int districtId, int provinceId);
     Task<bool> TehsilExistsAndBelongsToDistrictAsync(int tehsilId, int districtId);
+    /// <summary>Get a single tehsil by ID including its coordinates.</summary>
+    Task<LocationDto?> GetTehsilByIdAsync(int tehsilId);
 }

@@ -22,12 +22,12 @@ public class CropPriceService : ICropPriceService
         "financial, investment, or trading advice.";
 
     private readonly ICropPriceProvider _provider;
-    private readonly ICropSuitabilityDataRepository _suitabilityData;
+    private readonly ICropCatalogRepository _catalogRepository;
 
-    public CropPriceService(ICropPriceProvider provider, ICropSuitabilityDataRepository suitabilityData)
+    public CropPriceService(ICropPriceProvider provider, ICropCatalogRepository catalogRepository)
     {
         _provider = provider;
-        _suitabilityData = suitabilityData;
+        _catalogRepository = catalogRepository;
     }
 
     public async Task<CropPricePagedResultDto> GetPricesAsync(CropPriceQuery query, CancellationToken ct = default)
@@ -46,7 +46,7 @@ public class CropPriceService : ICropPriceService
         string? canonicalCrop = null;
         if (cropFilterSupplied)
         {
-            var catalog = await _suitabilityData.GetCatalogAsync(ct);
+            var catalog = await _catalogRepository.GetCatalogAsync(ct);
             canonicalCrop = ResolveCatalogName(query.Crop!, catalog.Select(c => c.Name));
         }
 
@@ -89,7 +89,7 @@ public class CropPriceService : ICropPriceService
             throw new ValidationException("Crop name is required.");
         ValidateDateRange(fromDate, toDate);
 
-        var catalog = await _suitabilityData.GetCatalogAsync(ct);
+        var catalog = await _catalogRepository.GetCatalogAsync(ct);
         var canonical = ResolveCatalogName(trimmed, catalog.Select(c => c.Name))
             ?? throw new NotFoundException("Crop not found.");
 

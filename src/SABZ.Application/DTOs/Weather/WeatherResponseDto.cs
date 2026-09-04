@@ -14,11 +14,23 @@ public class WeatherResponseDto
     /// <summary>Longitude used for the weather query.</summary>
     public double Longitude { get; set; }
 
+    /// <summary>How the coordinates were resolved (e.g. "FarmGps", "DeviceGps", "TehsilCentre").</summary>
+    public string CoordinateSource { get; set; } = string.Empty;
+
+    /// <summary>Human-readable name of the resolved location (e.g. "Lahore, Punjab").</summary>
+    public string? LocationName { get; set; }
+
     /// <summary>Weather data provider name (e.g. "Open-Meteo").</summary>
     public string Source { get; set; } = string.Empty;
 
     /// <summary>When this data was retrieved (UTC).</summary>
     public DateTime RetrievedAt { get; set; }
+
+    /// <summary>True if this data was served from cache because the provider was unreachable.</summary>
+    public bool IsStale { get; set; }
+
+    /// <summary>Human-readable warning when IsStale is true.</summary>
+    public string? StaleWarning { get; set; }
 
     /// <summary>Current weather observation (null if only forecast was requested).</summary>
     public CurrentWeatherDto? Current { get; set; }

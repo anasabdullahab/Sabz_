@@ -79,11 +79,18 @@ public class QwenAgronomistAiProvider : IAgronomistAiProvider
         var payload = JsonSerializer.Serialize(body, JsonOptions);
         using var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
+        // Fail fast: the chat timeout is deliberately shorter than the shared
+        // connection timeout so an unresponsive model does not leave the farmer
+        // waiting on the full window. The calling service falls back to the local
+        // knowledge base when this throws.
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(5, _settings.ChatTimeoutSeconds)));
+
         string responseBody;
         try
         {
-            using var response = await client.PostAsync("chat/completions", content, ct);
-            responseBody = await response.Content.ReadAsStringAsync(ct);
+            using var response = await client.PostAsync("chat/completions", content, timeoutCts.Token);
+            responseBody = await response.Content.ReadAsStringAsync(timeoutCts.Token);
 
             if (!response.IsSuccessStatusCode)
             {

@@ -41,6 +41,31 @@ public class CropRepository : ICropRepository
             .ToListAsync();
     }
 
+    public async Task<int?> FindCatalogIdByNameAsync(string cropName)
+    {
+        if (string.IsNullOrWhiteSpace(cropName)) return null;
+
+        var name = cropName.Trim();
+        // "Gram (Chickpea)" -> "Gram" for catalog entries stored with parenthesised names.
+        var baseName = name.Contains('(', StringComparison.Ordinal)
+            ? name[..name.IndexOf('(', StringComparison.Ordinal)].Trim()
+            : name;
+
+        var candidates = await _context.CropCatalog
+            .AsNoTracking()
+            .Select(c => new { c.Id, c.Name })
+            .ToListAsync();
+        if (candidates.Count == 0) return null;
+
+        // Exact name -> exact base name -> prefix (e.g. "Chili" -> "Chili Pepper").
+        var match =
+            candidates.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase))
+            ?? candidates.FirstOrDefault(c => string.Equals(c.Name, baseName, StringComparison.OrdinalIgnoreCase))
+            ?? candidates.FirstOrDefault(c => c.Name.StartsWith(baseName, StringComparison.OrdinalIgnoreCase));
+
+        return match?.Id;
+    }
+
     public async Task AddAsync(Crop crop)
     {
         await _context.Crops.AddAsync(crop);

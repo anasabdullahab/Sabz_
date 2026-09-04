@@ -34,6 +34,13 @@ public class AgronomistAssistantService : IAgronomistAssistantService
     public const string LimitNoCrops = "NoCrops";
     public const string LimitNoCoordinates = "NoCoordinates";
     public const string LimitWeatherUnavailable = "WeatherUnavailable";
+    public const string LimitOfflineAnswer = "OfflineAnswer";
+
+    /// <summary>Answer produced by the AI provider (DashScope).</summary>
+    public const string SourceAiProvider = "AiProvider";
+
+    /// <summary>Answer produced by the local keyword-matching knowledge base fallback.</summary>
+    public const string SourceLocalKnowledgeBase = "LocalKnowledgeBase";
 
     /// <summary>Mandatory advisory statement (always present on a successful answer).</summary>
     public const string Disclaimer =
@@ -137,6 +144,7 @@ public class AgronomistAssistantService : IAgronomistAssistantService
             TranscriptionProvider = _speechToTextProvider.ProviderName,
             Question = answer.Question,
             Answer = answer.Answer,
+            AnswerSource = answer.AnswerSource,
             Language = answer.Language,
             FarmContextUsed = answer.FarmContextUsed,
             Limitations = answer.Limitations,
@@ -157,29 +165,64 @@ public class AgronomistAssistantService : IAgronomistAssistantService
     {
         var language = DetectLanguage(question);
 
-        // AI provider gate (never fabricates an answer).
-        if (!_aiProvider.IsConfigured)
-            throw new AgronomistProviderException(
-                "The AI agronomist provider is not configured. " +
-                "Set the DashScope DiseaseDetection:ApiKey in local configuration to enable the assistant.");
-
         var (farmContext, limitations, contextBlock) = await BuildFarmContextAsync(userId, farm, question, ct);
 
-        var systemPrompt = BuildSystemPrompt(language);
-        var userPrompt = BuildUserPrompt(question, contextBlock);
+        string answer;
+        string answerSource;
 
-        var answer = await _aiProvider.CompleteAsync(systemPrompt, userPrompt, ct);
+        if (!_aiProvider.IsConfigured)
+        {
+            // Provider missing: answer offline when the question matches the local
+            // knowledge base; otherwise explain what offline mode covers instead
+            // of failing with a provider error (the chat must never dead-end).
+            answer = AgronomistLocalKnowledge.TryAnswer(question)
+                     ?? AgronomistLocalKnowledge.OfflineCapabilitiesAnswer();
+            answerSource = SourceLocalKnowledgeBase;
+            AddOfflineLimitation(limitations, "The AI provider is not configured, so this answer comes from the built-in SABZ crop knowledge base.");
+        }
+        else
+        {
+            var systemPrompt = BuildSystemPrompt(language);
+            var userPrompt = BuildUserPrompt(question, contextBlock);
+
+            try
+            {
+                answer = await _aiProvider.CompleteAsync(systemPrompt, userPrompt, ct);
+                answerSource = SourceAiProvider;
+            }
+            catch (AgronomistProviderException ex)
+            {
+                // Provider unavailable / timed out / rate-limited: fall back to the
+                // local knowledge base; when the question does not match, explain
+                // offline capabilities instead of surfacing the provider error.
+                _logger.LogWarning(ex, "Agronomist AI provider failed for farm {FarmId}; answering from the local knowledge base.", farm.Id);
+                answer = AgronomistLocalKnowledge.TryAnswer(question)
+                         ?? AgronomistLocalKnowledge.OfflineCapabilitiesAnswer();
+                answerSource = SourceLocalKnowledgeBase;
+                AddOfflineLimitation(limitations, "The AI service was unavailable, so this answer comes from the built-in SABZ crop knowledge base.");
+            }
+        }
 
         return new AgronomistResponseDto
         {
             Question = question,
             Answer = answer,
+            AnswerSource = answerSource,
             Language = language,
             FarmContextUsed = farmContext,
             Limitations = limitations,
             Disclaimer = Disclaimer,
             GeneratedAt = _clock.UtcNow
         };
+    }
+
+    private static void AddOfflineLimitation(List<AgronomistLimitationDto> limitations, string message)
+    {
+        limitations.Add(new AgronomistLimitationDto
+        {
+            Code = LimitOfflineAnswer,
+            Message = message
+        });
     }
 
     // ------------------------------------------------------------------
@@ -279,7 +322,7 @@ public class AgronomistAssistantService : IAgronomistAssistantService
         {
             try
             {
-                var weather = await _weatherService.GetCurrentWeatherAsync(userId, farm.Id, ct);
+                var weather = await _weatherService.GetCurrentWeatherAsync(userId, farm.Id, ct: ct);
                 var summary = SummarizeWeather(weather);
                 if (summary is not null)
                 {
